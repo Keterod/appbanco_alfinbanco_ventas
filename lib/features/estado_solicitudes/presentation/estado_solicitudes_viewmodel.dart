@@ -1,0 +1,70 @@
+import 'package:flutter/foundation.dart';
+
+import '../domain/request_status_mock_data.dart';
+import '../domain/request_status_model.dart';
+
+/// ViewModel del tablero de estado de solicitudes (HU-V07).
+class EstadoSolicitudesViewModel extends ChangeNotifier {
+  bool _isLoading = false;
+  String? _errorMessage;
+  RequestStatus _selectedStatus = RequestStatus.enviada;
+  List<RequestStatusModel> _requests = [];
+  String? _highlightReference;
+
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+  RequestStatus get selectedStatus => _selectedStatus;
+  String? get highlightReference => _highlightReference;
+
+  int get totalSolicitudes => _requests.length;
+
+  int get totalAprobadas => getCountByStatus(RequestStatus.aprobada) +
+      getCountByStatus(RequestStatus.condicionada) +
+      getCountByStatus(RequestStatus.desembolsada);
+
+  int get totalDesembolsadas => getCountByStatus(RequestStatus.desembolsada);
+
+  double get montoTotalAprobado => _requests
+      .where((r) =>
+          r.estado == RequestStatus.aprobada ||
+          r.estado == RequestStatus.condicionada ||
+          r.estado == RequestStatus.desembolsada)
+      .fold(0, (sum, r) => sum + (r.montoAprobado ?? r.montoSolicitado));
+
+  Future<void> loadRequests({String? highlightedSolicitudId}) async {
+    _isLoading = true;
+    _errorMessage = null;
+    _highlightReference = highlightedSolicitudId;
+    notifyListeners();
+
+    await Future<void>.delayed(const Duration(milliseconds: 400));
+
+    _requests = RequestStatusMockData.all();
+
+    if (_highlightReference != null) {
+      final match = RequestStatusMockData.findByReference(_highlightReference);
+      if (match != null) {
+        _selectedStatus = match.estado;
+      }
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  void selectStatus(RequestStatus status) {
+    _selectedStatus = status;
+    notifyListeners();
+  }
+
+  void filterByStatus(RequestStatus status) => selectStatus(status);
+
+  int getCountByStatus(RequestStatus status) =>
+      _requests.where((r) => r.estado == status).length;
+
+  List<RequestStatusModel> getFilteredRequests() =>
+      _requests.where((r) => r.estado == _selectedStatus).toList(growable: false);
+
+  bool isHighlighted(RequestStatusModel request) =>
+      request.matchesReference(_highlightReference);
+}
