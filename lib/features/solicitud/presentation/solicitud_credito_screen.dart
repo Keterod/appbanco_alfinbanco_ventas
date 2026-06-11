@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../shared/widgets/oficial_drawer.dart';
 import '../domain/credit_request_model.dart';
 import 'solicitud_credito_viewmodel.dart';
 
@@ -85,6 +86,7 @@ class _SolicitudCreditoScreenState extends State<SolicitudCreditoScreen> {
           appBar: AppBar(
             title: const Text('Nueva solicitud de crédito'),
           ),
+          drawer: const OficialDrawer(),
           body: _vm.isLoading && _vm.pasoActual == 0 && _vm.nombres.isEmpty
               ? const Center(child: CircularProgressIndicator())
               : Column(

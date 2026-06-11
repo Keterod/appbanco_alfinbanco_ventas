@@ -12,4 +12,5 @@ abstract final class AppRoutes {
   static const String ruta = '/ruta';
   static const String cobranza = '/cobranza';
   static const String cobranzaAccion = '/cobranza-accion';
+  static const String reportes = '/reportes';
 }

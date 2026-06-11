@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../domain/client_portfolio_model.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../shared/widgets/oficial_drawer.dart';
 import 'cartera_viewmodel.dart';
 
 /// Pantalla de cartera diaria en campo (HU-V02).
@@ -67,6 +68,7 @@ class _CarteraDiariaScreenState extends State<CarteraDiariaScreen> {
           ),
         ],
       ),
+      drawer: const OficialDrawer(),
       body: Container(
         width: double.infinity,
         decoration: const BoxDecoration(

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../shared/widgets/oficial_drawer.dart';
 import 'home_oficial_viewmodel.dart';
 
 /// Dashboard principal del oficial de crédito.
@@ -42,8 +43,8 @@ class _HomeOficialScreenState extends State<HomeOficialScreen> {
         return Scaffold(
           appBar: AppBar(
             title: const Text('Alfin Banco — Ventas'),
-            automaticallyImplyLeading: false,
           ),
+          drawer: const OficialDrawer(),
           body: _vm.isLoading
               ? const Center(child: CircularProgressIndicator())
               : RefreshIndicator(
@@ -77,6 +78,8 @@ class _HomeOficialScreenState extends State<HomeOficialScreen> {
                           context,
                           AppRoutes.estadoSolicitudes,
                         ),
+                        onReportes: () =>
+                            Navigator.pushNamed(context, AppRoutes.reportes),
                       ),
                       const SizedBox(height: 20),
                       Text(
@@ -283,12 +286,14 @@ class _QuickAccessGrid extends StatelessWidget {
     required this.onRuta,
     required this.onCobranza,
     required this.onEstado,
+    required this.onReportes,
   });
 
   final VoidCallback onCartera;
   final VoidCallback onRuta;
   final VoidCallback onCobranza;
   final VoidCallback onEstado;
+  final VoidCallback onReportes;
 
   @override
   Widget build(BuildContext context) {
@@ -323,6 +328,12 @@ class _QuickAccessGrid extends StatelessWidget {
           label: 'Estado solicitudes',
           color: AppColors.gestionRenovacion,
           onTap: onEstado,
+        ),
+        _QuickTile(
+          icon: Icons.bar_chart_rounded,
+          label: 'Reportes',
+          color: AppColors.gestionSeguimiento,
+          onTap: onReportes,
         ),
       ],
     );

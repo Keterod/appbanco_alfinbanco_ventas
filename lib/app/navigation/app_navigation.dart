@@ -13,6 +13,7 @@ import '../../features/buro/presentation/buro_screen.dart';
 import '../../features/ruta/presentation/ruta_screen.dart';
 import '../../features/cobranza/presentation/cobranza_screen.dart';
 import '../../features/cobranza/presentation/cobranza_accion_screen.dart';
+import '../../features/reportes/presentation/reportes_screen.dart';
 import '../../core/constants/app_theme.dart';
 import '../../core/constants/app_routes.dart';
 
@@ -77,6 +78,7 @@ class AppNavigation extends StatelessWidget {
               ModalRoute.of(context)!.settings.arguments as String;
           return CobranzaAccionScreen(overdueClientId: overdueClientId);
         },
+        AppRoutes.reportes: (_) => const ReportesScreen(),
       },
     );
   }

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../shared/widgets/oficial_drawer.dart';
 import '../domain/collection_model.dart';
 import 'cobranza_viewmodel.dart';
 
@@ -55,6 +56,7 @@ class _CobranzaScreenState extends State<CobranzaScreen> {
           appBar: AppBar(
             title: const Text('Cartera vencida'),
           ),
+          drawer: const OficialDrawer(),
           body: _vm.isLoading && _vm.overdueClients.isEmpty
               ? const Center(child: CircularProgressIndicator())
               : ListView(

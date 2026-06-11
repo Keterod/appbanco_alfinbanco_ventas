@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../shared/widgets/oficial_drawer.dart';
 import '../domain/request_status_model.dart';
 import 'estado_solicitudes_viewmodel.dart';
 
@@ -54,6 +55,7 @@ class _EstadoSolicitudesScreenState extends State<EstadoSolicitudesScreen> {
           appBar: AppBar(
             title: const Text('Estado de solicitudes'),
           ),
+          drawer: const OficialDrawer(),
           body: _vm.isLoading
               ? const Center(child: CircularProgressIndicator())
               : Column(

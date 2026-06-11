@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../shared/widgets/oficial_drawer.dart';
 import '../domain/route_visit_model.dart';
 import 'ruta_viewmodel.dart';
 
@@ -48,6 +49,7 @@ class _RutaScreenState extends State<RutaScreen> {
           appBar: AppBar(
             title: const Text('Ruta de visitas'),
           ),
+          drawer: const OficialDrawer(),
           body: _vm.isLoading && _vm.visitas.isEmpty
               ? const Center(child: CircularProgressIndicator())
               : ListView(

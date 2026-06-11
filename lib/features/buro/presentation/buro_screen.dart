@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../shared/widgets/oficial_drawer.dart';
 import '../domain/buro_result_model.dart';
 import 'buro_viewmodel.dart';
 
@@ -84,6 +85,7 @@ class _BuroScreenState extends State<BuroScreen> {
           appBar: AppBar(
             title: const Text('Consulta de buró'),
           ),
+          drawer: const OficialDrawer(),
           body: _vm.isLoading && _vm.dniConsultado.isEmpty
               ? const Center(child: CircularProgressIndicator())
               : ListView(
