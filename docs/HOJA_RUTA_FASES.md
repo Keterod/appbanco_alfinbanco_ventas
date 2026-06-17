@@ -78,6 +78,32 @@
 
 ### Documentación
 - `docs/FASE2B_GPS_REAL.md`
+- `docs/FASE2B1_RUTA_SIN_MAPS_KEY.md`
+
+---
+
+## Fase 2B.1 — Mejora de Ruta sin Google Maps Embebido ✅
+
+**Objetivo**: Reemplazar "mapa simulado" por vista operativa profesional usando timeline vertical, coordenadas reales del oficial, y navegación externa.
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `ruta_screen.dart` | Eliminado `_SimulatedMapSection`. Nueva vista `_RutaOrdenadaView` con timeline de paradas numeradas. Coordenadas visibles en cada tarjeta. Indicador de ubicación en resumen. Navegación externa mejorada. |
+| `ruta_viewmodel.dart` | `openNavigation()` con origen real si disponible, solo destino si no. Documentación de migración futura. |
+
+### Archivos creados
+- `docs/FASE2B1_RUTA_SIN_MAPS_KEY.md`
+
+### Criterio de aceptación cumplido
+- ✅ No aparece "mapa simulado" ni placeholder language
+- ✅ Timeline vertical profesional con paradas numeradas y conectores
+- ✅ Cada parada muestra: nombre, dirección, coordenadas, prioridad, distancia, tiempo
+- ✅ Navegación externa: origen real → ruta completa; sin origen → solo destino
+- ✅ SnackBar de error si Google Maps no se puede abrir
+- ✅ Sin API Key de Google Maps
+- ✅ `flutter analyze`: 0 issues
 
 ---
 
@@ -259,6 +285,7 @@
 | **1** | Base del proyecto | Alta | Completada | — |
 | **2A** | Auditoría diferencial | Alta | Completada | Fase 1 |
 | **2B** | GPS real | **Crítica** | Completada | Fase 2A |
+| **2B.1** | Mejora Ruta sin API Key | Alta | Completada | Fase 2B |
 | **2C** | Conexión Supabase real | Alta | 2-3 semanas | Fase 2A |
 | **2D** | SQLite offline | Alta | 2-3 semanas | Fase 2A |
 | **2E** | Sync outbox/log | Media | 1 semana | Fase 2D |

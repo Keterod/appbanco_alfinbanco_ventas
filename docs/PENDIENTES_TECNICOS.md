@@ -26,6 +26,7 @@
 | 15 | Repositorios Supabase (cartera, ficha, buró, solicitud, cobranza) | `*_repository.dart` | Estructura lista para datos reales |
 | 16 | Branding unificado | `app_strings.dart`, `app_colors.dart` | "Banco Alfin · App Fuerza de Ventas" |
 | 17 | **GPS real** — Ubicación real del oficial en cobranza, solicitud y ruta con fallback controlado | `location_service.dart`, `cobranza_accion_viewmodel.dart`, `solicitud_credito_viewmodel.dart`, `ruta_viewmodel.dart` | `geolocator` + `url_launcher` + permisos |
+| 18 | **Ruta sin mapa simulado** — Timeline vertical con paradas numeradas, coordenadas visibles, navegación externa Google Maps | `ruta_screen.dart` (`_RutaOrdenadaView`, `_ParadaTimeline`) | Vista operativa profesional sin API Key |
 
 ---
 

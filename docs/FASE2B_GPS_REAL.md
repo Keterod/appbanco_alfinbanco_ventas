@@ -55,10 +55,24 @@ Reemplazar coordenadas simuladas/fijas por ubicación GPS real del oficial de cr
 3. Si timeout (15s) → `LocationResult(errorMessage, fromFallback: true)` con coordenadas `(-12.0464, -77.0428)`
 4. En UI: icono GPS de color naranja y texto "usando coordenadas de referencia"
 
+## Fase 2B.1 — Mejora de Ruta sin Google Maps Embebido (completada)
+Ver `FASE2B1_RUTA_SIN_MAPS_KEY.md` para detalles completos.
+- Reemplazado "mapa simulado" por vista timeline operativa profesional
+- Cada parada muestra: nombre, dirección, coordenadas, prioridad, distancia, tiempo
+- Navegación externa mejorada: origen real → ruta completa, sin origen → solo destino
+- Ubicación del oficial integrada en tarjeta de resumen
+- Coordenadas visibles en cada tarjeta de visita
+- `flutter analyze`: 0 issues
+
+## Pendiente
+- Google Maps embebido `(google_maps_flutter)` — requiere API Key
+- Cálculo real de distancias (Haversine o Distance Matrix)
+- Conexión de Ruta a cartera_diaria + clientes desde Supabase (Fase 2C/2D)
+
 ## Próximos Pasos (Fase 2C)
 - Conexión real a Supabase en lugar de mock
+- Dashboard, estado solicitudes y reportes desde datos reales
 - Almacenar ubicación en DB local para tracking offline
-- Cálculo real de distancias ruta (Haversine vs Google Distance Matrix)
 - Validar coordenadas en backend y dashboard
 
 ## Archivos Modificados

@@ -32,14 +32,29 @@ class _RutaScreenState extends State<RutaScreen> {
     super.dispose();
   }
 
-  void _showSnack(String? message) {
+  void _showSnack(String? message, {bool isError = false}) {
     if (message == null || !mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         behavior: SnackBarBehavior.floating,
+        backgroundColor: isError ? AppColors.gestionRecuperacionMora : null,
       ),
     );
+  }
+
+  void _onNavigate(String clientId) async {
+    final uri = _vm.openNavigation(clientId);
+    final url = Uri.tryParse(uri);
+    if (url != null && await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+      _showSnack(_vm.successMessage);
+    } else {
+      _showSnack(
+        'No se pudo abrir Google Maps. Verifique que tenga la aplicación instalada.',
+        isError: true,
+      );
+    }
   }
 
   @override
@@ -58,42 +73,6 @@ class _RutaScreenState extends State<RutaScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                   children: [
                     _SummaryCard(vm: _vm),
-                    if (_vm.locationStatus != null) ...[
-                      const SizedBox(height: 8),
-                      Card(
-                        color: AppColors.lightBackground,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          child: Row(
-                            children: [
-                              _vm.isLocating
-                                  ? const SizedBox(
-                                      width: 16, height: 16,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    )
-                                  : Icon(
-                                      _vm.oficialLat != null
-                                          ? Icons.gps_fixed
-                                          : Icons.gps_off,
-                                      size: 18,
-                                      color: _vm.oficialLat != null
-                                          ? AppColors.semaforoNormal
-                                          : AppColors.gestionRecuperacionMora,
-                                    ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  _vm.locationStatus!,
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -125,21 +104,16 @@ class _RutaScreenState extends State<RutaScreen> {
                           size: 18,
                           color: AppColors.semaforoNormal,
                         ),
-                        label: const Text('Ruta optimizada'),
+                        label: const Text('Ruta referencial optimizada'),
                         backgroundColor:
                             AppColors.semaforoNormal.withValues(alpha: 0.12),
                       ),
                     ],
                     const SizedBox(height: 16),
-                    _SimulatedMapSection(visitas: _vm.visitas),
+                    _RutaOrdenadaView(vm: _vm, onNavigate: _onNavigate),
                     const SizedBox(height: 16),
-                    Text(
-                      'Visitas del día',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.purpleSupport,
-                          ),
-                    ),
+                    if (_vm.visitas.isNotEmpty)
+                      _SectionHeader(title: 'Recorrido del día', count: _vm.visitas.length),
                     const SizedBox(height: 10),
                     ..._vm.visitas.map(
                       (v) => Padding(
@@ -151,15 +125,7 @@ class _RutaScreenState extends State<RutaScreen> {
                             AppRoutes.fichaCliente,
                             arguments: v.clientId,
                           ),
-                          onNavegar: () async {
-                              final uri = _vm.openNavigation(v.clientId);
-                              final url = Uri.tryParse(uri);
-                              if (url != null && await canLaunchUrl(url)) {
-                                await launchUrl(url, mode: LaunchMode.externalApplication);
-                              } else {
-                                _showSnack('No se pudo abrir el mapa.');
-                              }
-                            },
+                          onNavegar: () => _onNavigate(v.clientId),
                           onMarcarVisitado: v.isPendiente
                               ? () {
                                   _vm.markAsVisited(v.clientId);
@@ -177,6 +143,42 @@ class _RutaScreenState extends State<RutaScreen> {
   }
 }
 
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, required this.count});
+  final String title;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.purpleSupport,
+              ),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: AppColors.purpleSupport.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            '$count paradas',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.purpleSupport,
+                ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _SummaryCard extends StatelessWidget {
   const _SummaryCard({required this.vm});
 
@@ -184,21 +186,23 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress = vm.totalVisitas == 0
-        ? 0.0
-        : vm.visitadas / vm.totalVisitas;
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Resumen del día',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+            Row(
+              children: [
+                Icon(Icons.route, color: AppColors.secondary, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Resumen del día',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             Row(
@@ -221,16 +225,43 @@ class _SummaryCard extends StatelessWidget {
               'Tiempo estimado: ${vm.tiempoTotalMin} min',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
-            const SizedBox(height: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 8,
-                backgroundColor: AppColors.divider,
-                color: AppColors.semaforoNormal,
+            if (vm.locationStatus != null) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.lightBackground,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    vm.isLocating
+                        ? const SizedBox(
+                            width: 16, height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Icon(
+                            vm.oficialLat != null
+                                ? Icons.gps_fixed
+                                : Icons.gps_off,
+                            size: 16,
+                            color: vm.oficialLat != null
+                                ? AppColors.semaforoNormal
+                                : AppColors.gestionRecuperacionMora,
+                          ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        vm.locationStatus!,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),
@@ -272,10 +303,14 @@ class _MiniStat extends StatelessWidget {
   }
 }
 
-class _SimulatedMapSection extends StatelessWidget {
-  const _SimulatedMapSection({required this.visitas});
+class _RutaOrdenadaView extends StatelessWidget {
+  const _RutaOrdenadaView({
+    required this.vm,
+    required this.onNavigate,
+  });
 
-  final List<RouteVisitModel> visitas;
+  final RutaViewModel vm;
+  final void Function(String clientId) onNavigate;
 
   @override
   Widget build(BuildContext context) {
@@ -287,83 +322,34 @@ class _SimulatedMapSection extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.map_outlined, color: AppColors.secondary),
+                Icon(Icons.route_outlined, color: AppColors.secondary),
                 const SizedBox(width: 8),
                 Text(
-                  'Mapa de ruta',
+                  'Vista de ruta del día',
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            Container(
-              width: double.infinity,
-              height: 180,
-              decoration: BoxDecoration(
-                color: AppColors.lightBackground,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.divider),
-              ),
-              child: Stack(
-                children: [
-                  Center(
-                    child: Icon(
-                      Icons.location_on_outlined,
-                      size: 48,
-                      color: AppColors.secondary.withValues(alpha: 0.25),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: visitas.map((v) {
-                        return Chip(
-                          avatar: CircleAvatar(
-                            radius: 10,
-                            backgroundColor:
-                                RutaUi.priorityColor(v.prioridad),
-                            child: Text(
-                              '${v.ordenSugerido}',
-                              style: const TextStyle(
-                                color: AppColors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          label: Text(
-                            v.clienteNombre.split(' ').first,
-                            style: const TextStyle(fontSize: 11),
-                          ),
-                          visualDensity: VisualDensity.compact,
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Text(
-              'Mapa simulado — integración de mapas en siguiente fase',
+              'Ubicación del oficial detectada',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondary,
-                    fontStyle: FontStyle.italic,
                   ),
             ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 12,
-              children: [
-                _LegendDot(color: RutaUi.priorityColor(RoutePriority.alta), label: 'Alta'),
-                _LegendDot(color: RutaUi.priorityColor(RoutePriority.media), label: 'Media'),
-                _LegendDot(color: RutaUi.priorityColor(RoutePriority.normal), label: 'Normal'),
-              ],
-            ),
+            const SizedBox(height: 16),
+            ...List.generate(vm.visitas.length, (index) {
+              final v = vm.visitas[index];
+              final isLast = index == vm.visitas.length - 1;
+              return _ParadaTimeline(
+                visita: v,
+                index: index,
+                isLast: isLast,
+                onNavigate: () => onNavigate(v.clientId),
+              );
+            }),
           ],
         ),
       ),
@@ -371,25 +357,200 @@ class _SimulatedMapSection extends StatelessWidget {
   }
 }
 
-class _LegendDot extends StatelessWidget {
-  const _LegendDot({required this.color, required this.label});
+class _ParadaTimeline extends StatelessWidget {
+  const _ParadaTimeline({
+    required this.visita,
+    required this.index,
+    required this.isLast,
+    required this.onNavigate,
+  });
 
-  final Color color;
-  final String label;
+  final RouteVisitModel visita;
+  final int index;
+  final bool isLast;
+  final VoidCallback onNavigate;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    final priorityColor = RutaUi.priorityColor(visita.prioridad);
+    final isVisited = visita.isVisitado;
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 32,
+            child: Column(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isVisited
+                        ? AppColors.semaforoNormal
+                        : AppColors.secondary,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '${index + 1}',
+                    style: const TextStyle(
+                      color: AppColors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                if (!isLast)
+                  Expanded(
+                    child: Container(
+                      width: 2,
+                      color: AppColors.divider,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Container(
+              margin: EdgeInsets.only(bottom: isLast ? 0 : 16),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isVisited
+                    ? AppColors.semaforoNormal.withValues(alpha: 0.04)
+                    : null,
+                border: Border.all(
+                  color: isVisited
+                      ? AppColors.semaforoNormal.withValues(alpha: 0.2)
+                      : AppColors.divider,
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          visita.clienteNombre,
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                decoration: isVisited
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: priorityColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          visita.prioridad.label,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: priorityColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.place_outlined, size: 14, color: AppColors.softOrange),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          visita.direccion,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Icon(Icons.map, size: 12, color: AppColors.textSecondary),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${visita.lat.toStringAsFixed(5)}, ${visita.lng.toStringAsFixed(5)}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondary,
+                              fontSize: 11,
+                            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      _InfoChip(label: visita.tipoGestion.label),
+                      const SizedBox(width: 6),
+                      _InfoChip(
+                        label: '${visita.distanciaKm.toStringAsFixed(1)} km · ${visita.tiempoEstimadoMin} min',
+                      ),
+                      if (isVisited) ...[
+                        const SizedBox(width: 6),
+                        _InfoChip(
+                          label: 'Visitado',
+                          color: AppColors.semaforoNormal,
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 32,
+                    child: OutlinedButton.icon(
+                      onPressed: onNavigate,
+                      icon: const Icon(Icons.navigation_outlined, size: 16),
+                      label: const Text('Navegar', style: TextStyle(fontSize: 12)),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  const _InfoChip({required this.label, this.color});
+
+  final String label;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final chipColor = color ?? AppColors.textSecondary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: chipColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: chipColor,
         ),
-        const SizedBox(width: 4),
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-      ],
+      ),
     );
   }
 }
@@ -453,6 +614,20 @@ class _VisitCard extends StatelessWidget {
                               visita.direccion,
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(Icons.map, size: 12, color: AppColors.textSecondary),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${visita.lat.toStringAsFixed(5)}, ${visita.lng.toStringAsFixed(5)}',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 11,
+                                ),
                           ),
                         ],
                       ),

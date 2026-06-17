@@ -4,6 +4,11 @@ import '../../../core/location/location_service.dart';
 import '../domain/route_visit_model.dart';
 
 /// ViewModel de planificación de ruta diaria (HU-V09).
+///
+/// Actualmente usa datos seed en [_buildInitialVisits] para 5 clientes demo.
+/// En Fase 2C/2D debe migrar a cargar desde [CarteraRepository.loadCarteraDiaria]
+/// combinando `cartera_diaria.cliente_id` + `clientes.direccion` + `clientes.lat`/`lng`.
+/// El modelo [RouteVisitModel] ya tiene campos `direccion`, `lat`, `lng` completos.
 class RutaViewModel extends ChangeNotifier {
   final LocationService _locationService = LocationService.instance;
 
@@ -146,12 +151,19 @@ class RutaViewModel extends ChangeNotifier {
     }
 
     final visita = _visitas[index];
-    final originLat = _oficialLat ?? -12.0464;
-    final originLng = _oficialLng ?? -77.0428;
-    final uri = 'https://www.google.com/maps/dir/$originLat,$originLng/${visita.lat},${visita.lng}';
-    final msg = _oficialLat != null && !_locationFromFallback
-        ? 'Navegar a ${visita.clienteNombre} — abriendo Google Maps…'
-        : 'Navegar a ${visita.clienteNombre} (origen aproximado).';
+    final bool hasRealLocation = _oficialLat != null && !_locationFromFallback;
+
+    String uri;
+    String msg;
+
+    if (hasRealLocation) {
+      uri = 'https://www.google.com/maps/dir/$_oficialLat,$_oficialLng/${visita.lat},${visita.lng}';
+      msg = 'Abrir Google Maps con ruta desde su ubicación actual.';
+    } else {
+      uri = 'https://www.google.com/maps/dir/?api=1&destination=${visita.lat},${visita.lng}';
+      msg = 'Abrir Google Maps solo con destino (origen no disponible).';
+    }
+
     _successMessage = msg;
     notifyListeners();
     return uri;
