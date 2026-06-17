@@ -3,7 +3,9 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../core/constants/app_strings.dart';
 import '../../../shared/widgets/oficial_drawer.dart';
+import '../../auth/data/auth_oficial_repository.dart';
 import 'home_oficial_viewmodel.dart';
 
 /// Dashboard principal del oficial de crédito.
@@ -32,6 +34,7 @@ class _HomeOficialScreenState extends State<HomeOficialScreen> {
   }
 
   void _cerrarSesion() {
+    AuthOficialRepository.instance.signOut();
     Navigator.pushReplacementNamed(context, AppRoutes.login);
   }
 
@@ -42,7 +45,7 @@ class _HomeOficialScreenState extends State<HomeOficialScreen> {
       builder: (context, _) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Alfin Banco — Ventas'),
+            title: const Text(AppStrings.appTitle),
           ),
           drawer: const OficialDrawer(),
           body: _vm.isLoading
@@ -60,7 +63,7 @@ class _HomeOficialScreenState extends State<HomeOficialScreen> {
                       _SummaryCard(vm: _vm),
                       const SizedBox(height: 20),
                       Text(
-                        'Accesos rápidos',
+                        AppStrings.homeQuickAccess,
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w700,
                               color: AppColors.purpleSupport,
@@ -83,7 +86,7 @@ class _HomeOficialScreenState extends State<HomeOficialScreen> {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        'Actividad reciente',
+                        AppStrings.homeRecentActivity,
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w700,
                               color: AppColors.purpleSupport,
@@ -102,7 +105,7 @@ class _HomeOficialScreenState extends State<HomeOficialScreen> {
                         child: OutlinedButton.icon(
                           onPressed: _cerrarSesion,
                           icon: const Icon(Icons.logout_rounded),
-                          label: const Text('Cerrar sesión'),
+                          label: const Text(AppStrings.homeLogout),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.gestionRecuperacionMora,
                             side: const BorderSide(
@@ -161,7 +164,7 @@ class _WelcomeHeader extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Chip(
-              label: const Text('Modo demostración'),
+              label: const Text(AppStrings.demoBadge),
               backgroundColor: AppColors.secondary.withValues(alpha: 0.1),
               visualDensity: VisualDensity.compact,
             ),
@@ -186,7 +189,7 @@ class _SummaryCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Resumen del día',
+              AppStrings.homeSummaryTitle,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),

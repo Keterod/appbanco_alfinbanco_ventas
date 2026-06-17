@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_strings.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../shared/widgets/oficial_drawer.dart';
 import '../domain/route_visit_model.dart';
@@ -47,7 +48,7 @@ class _RutaScreenState extends State<RutaScreen> {
       builder: (context, _) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Ruta de visitas'),
+            title: const Text(AppStrings.rutaTitle),
           ),
           drawer: const OficialDrawer(),
           body: _vm.isLoading && _vm.visitas.isEmpty

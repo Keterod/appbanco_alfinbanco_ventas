@@ -1,9 +1,13 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/supabase/supabase_helper.dart';
+import '../data/ficha_cliente_repository.dart';
 import '../domain/client_detail_model.dart';
 
 /// ViewModel de ficha del cliente (HU-V03). Datos mock por clientId.
 class FichaClienteViewModel extends ChangeNotifier {
+  final FichaClienteRepository _repo = FichaClienteRepository.instance;
+
   bool _isLoading = false;
   String? _errorMessage;
   ClientDetailModel? _client;
@@ -18,7 +22,24 @@ class FichaClienteViewModel extends ChangeNotifier {
     _client = null;
     notifyListeners();
 
-    await Future<void>.delayed(const Duration(milliseconds: 450));
+    if (SupabaseHelper.hasSession) {
+      try {
+        SupabaseHelper.log('FichaClienteViewModel load Supabase id=$clientId');
+        final remote = await _repo.loadClientDetail(clientId);
+        if (remote != null) {
+          _client = remote;
+          _isLoading = false;
+          notifyListeners();
+          return;
+        }
+        SupabaseHelper.log('ficha no encontrada en Supabase, fallback mock');
+      } catch (error, stackTrace) {
+        SupabaseHelper.log('ficha falló, usando fallback mock');
+        SupabaseHelper.logError(error, stackTrace);
+      }
+    }
+
+    await Future<void>.delayed(const Duration(milliseconds: 300));
 
     final detail = _mockDetails[clientId];
     if (detail == null) {

@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../domain/client_portfolio_model.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_strings.dart';
 import '../../../shared/widgets/oficial_drawer.dart';
+import '../../auth/data/auth_oficial_repository.dart';
 import 'cartera_viewmodel.dart';
 
 /// Pantalla de cartera diaria en campo (HU-V02).
@@ -21,6 +23,7 @@ class _CarteraDiariaScreenState extends State<CarteraDiariaScreen> {
   void initState() {
     super.initState();
     _viewModel = CarteraViewModel();
+    _viewModel.loadCartera();
   }
 
   @override
@@ -30,6 +33,7 @@ class _CarteraDiariaScreenState extends State<CarteraDiariaScreen> {
   }
 
   void _cerrarSesion() {
+    AuthOficialRepository.instance.signOut();
     Navigator.pushReplacementNamed(context, AppRoutes.login);
   }
 
@@ -38,7 +42,7 @@ class _CarteraDiariaScreenState extends State<CarteraDiariaScreen> {
     final vm = _viewModel;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Alfin Banco — Ventas'),
+        title: const Text(AppStrings.appTitle),
         actions: [
           IconButton(
             tooltip: 'Inicio',
@@ -127,7 +131,7 @@ class _HeaderSection extends StatelessWidget {
             Icon(Icons.calendar_today_outlined, size: 18, color: AppColors.primary),
             const SizedBox(width: 8),
             Text(
-              'Cartera diaria',
+              AppStrings.carteraTitle,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppColors.darkText,
                     fontWeight: FontWeight.w600,
@@ -313,9 +317,16 @@ class _ClientCard extends StatelessWidget {
               children: [
                 Chip(
                   avatar: Icon(Icons.assignment_outlined, size: 18, color: managementColor),
-                  label: Text(client.managementType),
+                  label: Text(
+                    client.managementType,
+                    style: TextStyle(
+                      color: managementColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
                   backgroundColor: managementColor.withValues(alpha: 0.12),
-                  side: BorderSide(color: managementColor.withValues(alpha: 0.35)),
+                  side: BorderSide(color: managementColor.withValues(alpha: 0.45)),
                 ),
                 Chip(
                   avatar: Icon(
@@ -323,9 +334,16 @@ class _ClientCard extends StatelessWidget {
                     size: 18,
                     color: statusColor,
                   ),
-                  label: Text(client.status),
-                  backgroundColor: statusColor.withValues(alpha: 0.1),
-                  side: BorderSide(color: statusColor.withValues(alpha: 0.35)),
+                  label: Text(
+                    client.status,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                  backgroundColor: statusColor.withValues(alpha: 0.12),
+                  side: BorderSide(color: statusColor.withValues(alpha: 0.45)),
                 ),
               ],
             ),

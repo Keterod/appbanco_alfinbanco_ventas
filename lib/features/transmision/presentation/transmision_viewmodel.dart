@@ -169,43 +169,43 @@ class TransmisionViewModel extends ChangeNotifier {
   }
 
   static List<TransmissionStepModel> _buildInitialSteps() {
-    return const [
-      TransmissionStepModel(
+    return List<TransmissionStepModel>.from([
+      const TransmissionStepModel(
         id: 'validando-datos',
         titulo: 'Validando datos',
         descripcion: 'Revisión de consistencia de la solicitud y del solicitante.',
         estado: TransmissionStepStatus.pendiente,
       ),
-      TransmissionStepModel(
+      const TransmissionStepModel(
         id: 'verificando-documentos',
         titulo: 'Verificando documentos obligatorios',
         descripcion: 'Control de checklist documental mínimo requerido.',
         estado: TransmissionStepStatus.pendiente,
       ),
-      TransmissionStepModel(
+      const TransmissionStepModel(
         id: 'subiendo-documentos',
         titulo: 'Subiendo documentos',
         descripcion: 'Carga simulada de imágenes y archivos adjuntos.',
         estado: TransmissionStepStatus.pendiente,
       ),
-      TransmissionStepModel(
+      const TransmissionStepModel(
         id: 'registrando-sistema',
         titulo: 'Registrando en sistema central',
         descripcion: 'Sincronización con el núcleo operativo del banco.',
         estado: TransmissionStepStatus.pendiente,
       ),
-      TransmissionStepModel(
+      const TransmissionStepModel(
         id: 'asignando-expediente',
         titulo: 'Asignando expediente',
         descripcion: 'Generación del expediente oficial de evaluación.',
         estado: TransmissionStepStatus.pendiente,
       ),
-      TransmissionStepModel(
+      const TransmissionStepModel(
         id: 'enviado-comite',
         titulo: 'Solicitud enviada al comité',
         descripcion: 'Derivación al comité de evaluación crediticia.',
         estado: TransmissionStepStatus.pendiente,
       ),
-    ];
+    ]);
   }
 }

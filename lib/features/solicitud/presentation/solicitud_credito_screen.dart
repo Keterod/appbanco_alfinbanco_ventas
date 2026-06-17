@@ -84,7 +84,7 @@ class _SolicitudCreditoScreenState extends State<SolicitudCreditoScreen> {
       builder: (context, _) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Nueva solicitud de crédito'),
+            title: const Text('Nueva solicitud'),
           ),
           drawer: const OficialDrawer(),
           body: _vm.isLoading && _vm.pasoActual == 0 && _vm.nombres.isEmpty

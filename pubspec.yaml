@@ -1,5 +1,5 @@
 name: banco_alfinbanco_ventas
-description: "A new Flutter project."
+description: "App Fuerza de Ventas — Oficiales de crédito Banco Alfin"
 publish_to: 'none'
 version: 0.1.0+1
 
@@ -13,7 +13,7 @@ dependencies:
   flutter_riverpod: ^2.5.1
   riverpod_annotation: ^2.3.5
   # Backend
-  supabase_flutter: ^2.5.0
+  supabase_flutter: ^2.8.0
   # Base de datos local
   sqflite: ^2.3.3
   path: ^1.9.0

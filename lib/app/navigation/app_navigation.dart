@@ -16,6 +16,7 @@ import '../../features/cobranza/presentation/cobranza_accion_screen.dart';
 import '../../features/reportes/presentation/reportes_screen.dart';
 import '../../core/constants/app_theme.dart';
 import '../../core/constants/app_routes.dart';
+import '../../core/constants/app_strings.dart';
 
 class AppNavigation extends StatelessWidget {
   const AppNavigation({super.key});
@@ -23,7 +24,7 @@ class AppNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Alfin Banco — Ventas',
+      title: AppStrings.appTitle,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       initialRoute: AppRoutes.login,

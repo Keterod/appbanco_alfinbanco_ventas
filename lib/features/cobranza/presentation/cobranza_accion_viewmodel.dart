@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/supabase/supabase_helper.dart';
 import '../data/cobranza_local_repository.dart';
+import '../data/cobranza_repository.dart';
 import '../domain/collection_model.dart';
 import 'cobranza_viewmodel.dart';
 
@@ -136,6 +138,8 @@ class CobranzaAccionViewModel extends ChangeNotifier {
       id: _repo.nextActionId(),
       clientId: c.clientId,
       creditoId: c.creditoId,
+      documento: c.documento,
+      clienteNombre: c.clienteNombre,
       tipoGestion: _tipoGestion!,
       resultado: _resultado!,
       montoPagado:
@@ -151,7 +155,21 @@ class CobranzaAccionViewModel extends ChangeNotifier {
     );
 
     _listVm.registerAction(overdueClientId, action);
-    _successMessage = 'Gestión guardada. Coordenadas simuladas registradas.';
+
+    if (SupabaseHelper.hasSession) {
+      try {
+        await CobranzaRepository.instance.insertAccion(action);
+        _successMessage =
+            'Gestión guardada y registrada en Supabase.';
+      } catch (error, stackTrace) {
+        SupabaseHelper.log('cobranza falló, usando fallback mock');
+        SupabaseHelper.logError(error, stackTrace);
+        _successMessage = SupabaseHelper.fallbackSaveMessage;
+      }
+    } else {
+      _successMessage = 'Gestión guardada. Coordenadas simuladas registradas.';
+    }
+
     _isLoading = false;
     notifyListeners();
     return true;

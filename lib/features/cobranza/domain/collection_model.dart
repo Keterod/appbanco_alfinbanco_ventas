@@ -60,6 +60,8 @@ class CollectionActionModel {
     required this.lat,
     required this.lng,
     required this.timestampGestion,
+    this.documento,
+    this.clienteNombre,
   });
 
   final String id;
@@ -74,6 +76,8 @@ class CollectionActionModel {
   final double lat;
   final double lng;
   final DateTime timestampGestion;
+  final String? documento;
+  final String? clienteNombre;
 }
 
 /// Cliente con mora para recuperación de cartera (HU-V10).

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_strings.dart';
 import '../domain/collection_model.dart';
 import 'cobranza_accion_viewmodel.dart';
 
@@ -78,14 +79,14 @@ class _CobranzaAccionScreenState extends State<CobranzaAccionScreen> {
         final client = _vm.client;
         if (client == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Registrar cobranza')),
+            appBar: AppBar(title: const Text(AppStrings.cobranzaAccionTitle)),
             body: const Center(child: Text('Cliente no encontrado')),
           );
         }
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Registrar cobranza'),
+            title: const Text(AppStrings.cobranzaAccionTitle),
           ),
           body: ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),

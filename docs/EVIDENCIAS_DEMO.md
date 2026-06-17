@@ -1,4 +1,4 @@
-# Evidencias sugeridas para demo — App Fuerza de Ventas
+# Evidencias sugeridas para demo — App Fuerza de Ventas Banco Alfin
 
 Guía para capturas de pantalla o grabación de video al presentar el proyecto.
 

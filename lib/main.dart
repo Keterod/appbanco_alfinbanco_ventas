@@ -1,13 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'core/supabase/supabase_client.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'core/supabase/supabase_config.dart';
+import 'core/supabase/supabase_helper.dart';
 import 'core/storage/local_db.dart';
 import 'app/navigation/app_navigation.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await SupabaseConfig.initialize();
+  if (SupabaseConfig.isConfigured) {
+    try {
+      await Supabase.initialize(
+        url: SupabaseConfig.supabaseUrl,
+        anonKey: SupabaseConfig.supabaseAnonKey,
+      );
+      SupabaseHelper.markInitialized();
+      SupabaseHelper.log('Inicialización OK');
+    } catch (e) {
+      SupabaseHelper.log('Inicialización fallida: $e');
+    }
+  }
+
   await LocalDb.database;
 
   runApp(

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../auth/data/asesor_repository.dart';
 import '../../cobranza/data/cobranza_local_repository.dart';
 import '../../estado_solicitudes/domain/request_status_mock_data.dart';
 import '../../estado_solicitudes/domain/request_status_model.dart';
@@ -21,7 +22,8 @@ class RecentActivityItem {
 
 /// ViewModel del dashboard del oficial de crédito.
 class HomeOficialViewModel extends ChangeNotifier {
-  static const String officerName = 'Oficial Alfin';
+  static String get officerName =>
+      AsesorRepository.instance.current?.nombreCompleto ?? 'Oficial Alfin';
 
   bool _isLoading = false;
   int _visitasDelDia = 0;

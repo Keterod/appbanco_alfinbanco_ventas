@@ -3,7 +3,9 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../core/constants/app_strings.dart';
 import '../../../shared/widgets/oficial_drawer.dart';
+import '../../../shared/widgets/app_filter_chip.dart';
 import '../domain/request_status_model.dart';
 import 'estado_solicitudes_viewmodel.dart';
 
@@ -53,7 +55,7 @@ class _EstadoSolicitudesScreenState extends State<EstadoSolicitudesScreen> {
       builder: (context, _) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Estado de solicitudes'),
+            title: const Text(AppStrings.estadoTitle),
           ),
           drawer: const OficialDrawer(),
           body: _vm.isLoading
@@ -221,12 +223,11 @@ class _StatusChips extends StatelessWidget {
           final count = vm.getCountByStatus(status);
           return Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
+            child: AppFilterChip(
+              label: '${status.label} ($count)',
               selected: selected,
-              label: Text('${status.label} ($count)'),
               onSelected: (_) => vm.selectStatus(status),
-              selectedColor: RequestStatusUi.color(status).withValues(alpha: 0.2),
-              checkmarkColor: RequestStatusUi.color(status),
+              accentColor: RequestStatusUi.color(status),
             ),
           );
         }).toList(),

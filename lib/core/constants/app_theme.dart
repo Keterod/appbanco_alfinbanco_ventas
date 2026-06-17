@@ -59,7 +59,21 @@ abstract final class AppTheme {
       ),
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        backgroundColor: AppColors.white,
+        selectedColor: AppColors.secondary,
+        disabledColor: AppColors.lightBackground,
+        labelStyle: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary,
+        ),
+        secondaryLabelStyle: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: AppColors.white,
+        ),
+        side: const BorderSide(color: AppColors.divider),
+        checkmarkColor: AppColors.white,
       ),
     );
     return base;

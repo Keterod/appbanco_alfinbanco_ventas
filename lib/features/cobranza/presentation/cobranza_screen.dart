@@ -3,7 +3,9 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../core/constants/app_strings.dart';
 import '../../../shared/widgets/oficial_drawer.dart';
+import '../../../shared/widgets/app_filter_chip.dart';
 import '../domain/collection_model.dart';
 import 'cobranza_viewmodel.dart';
 
@@ -54,7 +56,7 @@ class _CobranzaScreenState extends State<CobranzaScreen> {
         final filtered = _vm.getFilteredClients();
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Cartera vencida'),
+            title: const Text(AppStrings.cobranzaTitle),
           ),
           drawer: const OficialDrawer(),
           body: _vm.isLoading && _vm.overdueClients.isEmpty
@@ -213,10 +215,11 @@ class _FilterChips extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
         children: [
-          FilterChip(
-            label: const Text('Todos'),
+          AppFilterChip(
+            label: 'Todos',
             selected: vm.selectedPriorityFilter == null,
             onSelected: (_) => vm.setPriorityFilter(null),
           ),
@@ -224,12 +227,11 @@ class _FilterChips extends StatelessWidget {
           ...OverduePriority.values.map((p) {
             return Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: FilterChip(
-                label: Text('${p.label} (${vm.getCountByPriority(p)})'),
+              child: AppFilterChip(
+                label: '${p.label} (${vm.getCountByPriority(p)})',
                 selected: vm.selectedPriorityFilter == p,
                 onSelected: (_) => vm.setPriorityFilter(p),
-                selectedColor:
-                    CobranzaUi.priorityColor(p).withValues(alpha: 0.2),
+                accentColor: CobranzaUi.priorityColor(p),
               ),
             );
           }),

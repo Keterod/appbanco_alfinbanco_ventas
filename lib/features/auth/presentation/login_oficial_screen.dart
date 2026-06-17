@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_routes.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_strings.dart';
 import 'auth_oficial_viewmodel.dart';
 
 /// Pantalla de login del oficial de crédito (HU-V01).
@@ -78,6 +79,7 @@ class _LoginOficialScreenState extends State<LoginOficialScreen> {
                         codeController: _codeController,
                         passwordController: _passwordController,
                         isLoading: _viewModel.isLoading,
+                        errorMessage: _viewModel.errorMessage,
                         onIngresar: _onIngresar,
                       ),
                     ],
@@ -125,7 +127,7 @@ class _BrandHeader extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(
-          'Alfin Banco',
+          AppStrings.bankName,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 color: AppColors.white,
                 fontWeight: FontWeight.bold,
@@ -140,7 +142,7 @@ class _BrandHeader extends StatelessWidget {
             border: Border.all(color: AppColors.primary.withValues(alpha: 0.6)),
           ),
           child: Text(
-            'Portal Oficial de Crédito',
+            AppStrings.officerPortal,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   color: AppColors.white,
                   fontWeight: FontWeight.w600,
@@ -149,7 +151,7 @@ class _BrandHeader extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          'Modo demostración — acceso institucional',
+          AppStrings.loginDemoMode,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: AppColors.white.withValues(alpha: 0.85),
@@ -165,12 +167,14 @@ class _LoginCard extends StatelessWidget {
     required this.codeController,
     required this.passwordController,
     required this.isLoading,
+    required this.errorMessage,
     required this.onIngresar,
   });
 
   final TextEditingController codeController;
   final TextEditingController passwordController;
   final bool isLoading;
+  final String? errorMessage;
   final VoidCallback onIngresar;
 
   @override
@@ -185,7 +189,7 @@ class _LoginCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Acceso de oficial',
+              AppStrings.loginTitle,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: AppColors.darkText,
                     fontWeight: FontWeight.w700,
@@ -193,7 +197,7 @@ class _LoginCard extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Ingrese sus credenciales institucionales.',
+              AppStrings.loginSubtitle,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.darkText.withValues(alpha: 0.65),
                   ),
@@ -204,8 +208,9 @@ class _LoginCard extends StatelessWidget {
               textInputAction: TextInputAction.next,
               keyboardType: TextInputType.text,
               decoration: const InputDecoration(
-                labelText: 'Código de empleado',
+                labelText: AppStrings.loginEmployeeCode,
                 prefixIcon: Icon(Icons.badge_outlined, color: AppColors.secondary),
+                helperText: AppStrings.loginDemoCode,
               ),
             ),
             const SizedBox(height: 16),
@@ -214,10 +219,21 @@ class _LoginCard extends StatelessWidget {
               obscureText: true,
               onSubmitted: (_) => onIngresar(),
               decoration: const InputDecoration(
-                labelText: 'Contraseña',
+                labelText: AppStrings.loginPassword,
                 prefixIcon: Icon(Icons.lock_outline, color: AppColors.secondary),
+                helperText: AppStrings.loginDemoPassword,
               ),
             ),
+            if (errorMessage != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                errorMessage!,
+                style: TextStyle(
+                  color: AppColors.gestionRecuperacionMora,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
             SizedBox(
               height: 48,
@@ -232,7 +248,7 @@ class _LoginCard extends StatelessWidget {
                           color: AppColors.white,
                         ),
                       )
-                    : const Text('Ingresar'),
+                    : const Text(AppStrings.loginButton),
               ),
             ),
           ],

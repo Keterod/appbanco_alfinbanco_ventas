@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../core/constants/app_strings.dart';
 import '../domain/document_model.dart';
 import 'documentos_viewmodel.dart';
 
@@ -146,7 +147,7 @@ class _DocumentosScreenState extends State<DocumentosScreen> {
       builder: (context, _) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Documentos de solicitud'),
+            title: const Text(AppStrings.documentosTitle),
           ),
           body: _vm.isLoading && _vm.documentos.isEmpty
               ? const Center(child: CircularProgressIndicator())

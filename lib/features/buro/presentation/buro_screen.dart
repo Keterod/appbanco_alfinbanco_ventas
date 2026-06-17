@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../core/constants/app_strings.dart';
 import '../../../shared/widgets/oficial_drawer.dart';
 import '../domain/buro_result_model.dart';
 import 'buro_viewmodel.dart';
@@ -53,8 +54,11 @@ class _BuroScreenState extends State<BuroScreen> {
 
   Future<void> _onConsultar() async {
     await _vm.consultarBuro();
+    if (!mounted) return;
     if (_vm.errorMessage != null) {
       _showSnack(_vm.errorMessage!, error: true);
+    } else if (_vm.supabaseWarningMessage != null) {
+      _showSnack(_vm.supabaseWarningMessage!, error: true);
     } else if (_vm.successMessage != null) {
       _showSnack(_vm.successMessage!);
     }
@@ -83,7 +87,7 @@ class _BuroScreenState extends State<BuroScreen> {
       builder: (context, _) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Consulta de buró'),
+            title: const Text(AppStrings.buroTitle),
           ),
           drawer: const OficialDrawer(),
           body: _vm.isLoading && _vm.dniConsultado.isEmpty
@@ -111,7 +115,7 @@ class _BuroScreenState extends State<BuroScreen> {
                                 ),
                               )
                             : const Icon(Icons.search_rounded),
-                        label: const Text('Consultar buró y listas'),
+                        label: const Text(AppStrings.buroButtonConsult),
                       ),
                     ),
                     if (_vm.tieneResultado && _vm.resultado != null) ...[
@@ -128,7 +132,7 @@ class _BuroScreenState extends State<BuroScreen> {
                           child: ElevatedButton.icon(
                             onPressed: _onContinuarSolicitud,
                             icon: const Icon(Icons.arrow_forward_rounded),
-                            label: const Text('Continuar solicitud'),
+                            label: const Text(AppStrings.buroButtonContinue),
                           ),
                         ),
                       const SizedBox(height: 10),
@@ -167,7 +171,7 @@ class _ClientCard extends StatelessWidget {
                 Icon(Icons.person_search, color: AppColors.secondary),
                 const SizedBox(width: 8),
                 Text(
-                  'Cliente',
+                  AppStrings.buroClient,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -191,7 +195,7 @@ class _ClientCard extends StatelessWidget {
             const SizedBox(height: 8),
             Chip(
               avatar: Icon(Icons.location_on_outlined, size: 16, color: AppColors.softOrange),
-              label: const Text('Verificación en campo'),
+              label: const Text(AppStrings.buroFieldVerification),
               backgroundColor: AppColors.softOrange.withValues(alpha: 0.1),
               visualDensity: VisualDensity.compact,
             ),
@@ -215,8 +219,8 @@ class _DniCard extends StatelessWidget {
         child: TextFormField(
           initialValue: vm.dniConsultado,
           decoration: const InputDecoration(
-            labelText: 'DNI a consultar *',
-            hintText: '8 dígitos',
+            labelText: AppStrings.buroDniLabel,
+            hintText: AppStrings.buroDniHint,
             prefixIcon: Icon(Icons.badge_outlined),
           ),
           keyboardType: TextInputType.number,
@@ -243,7 +247,7 @@ class _ConsentCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Consentimiento informado',
+              AppStrings.buroConsentTitle,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: AppColors.purpleSupport,
@@ -251,9 +255,7 @@ class _ConsentCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'El cliente autoriza a Banco Alfin a consultar su historial '
-              'crediticio en centrales de riesgo y listas de restricción, '
-              'exclusivamente para evaluación de una solicitud de crédito.',
+              AppStrings.buroConsentText,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondary,
                     height: 1.4,
@@ -264,7 +266,7 @@ class _ConsentCard extends StatelessWidget {
               contentPadding: EdgeInsets.zero,
               value: vm.consentimientoAceptado,
               onChanged: (v) => vm.toggleConsentimiento(v ?? false),
-              title: const Text('Cliente autoriza la consulta'),
+               title: const Text(AppStrings.buroConsentCheckbox),
               controlAffinity: ListTileControlAffinity.leading,
             ),
             OutlinedButton.icon(
@@ -315,7 +317,7 @@ class _ResultSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Resultado de consulta',
+          AppStrings.buroResultTitle,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: AppColors.purpleSupport,
@@ -430,7 +432,7 @@ class _ResultSection extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Lista de restricción',
+                          AppStrings.buroRestrictionList,
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
                             color: AppColors.semaforoDudoso,

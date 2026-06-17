@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_routes.dart';
+import '../../core/constants/app_strings.dart';
+import '../../features/auth/data/auth_oficial_repository.dart';
 import '../../features/home/presentation/home_oficial_viewmodel.dart';
 
 /// Menú lateral global del oficial de crédito.
@@ -10,42 +12,42 @@ class OficialDrawer extends StatelessWidget {
 
   static const _menuItems = <_DrawerMenuItem>[
     _DrawerMenuItem(
-      label: 'Inicio',
+      label: AppStrings.drawerHome,
       route: AppRoutes.homeOficial,
       icon: Icons.home_outlined,
     ),
     _DrawerMenuItem(
-      label: 'Cartera diaria',
+      label: AppStrings.drawerCartera,
       route: AppRoutes.cartera,
       icon: Icons.groups_outlined,
     ),
     _DrawerMenuItem(
-      label: 'Planificar ruta',
+      label: AppStrings.drawerRuta,
       route: AppRoutes.ruta,
       icon: Icons.route_outlined,
     ),
     _DrawerMenuItem(
-      label: 'Consulta de buró',
+      label: AppStrings.drawerBuro,
       route: AppRoutes.buro,
       icon: Icons.fact_check_outlined,
     ),
     _DrawerMenuItem(
-      label: 'Nueva solicitud',
+      label: AppStrings.drawerSolicitud,
       route: AppRoutes.solicitudCredito,
       icon: Icons.note_add_outlined,
     ),
     _DrawerMenuItem(
-      label: 'Estado de solicitudes',
+      label: AppStrings.drawerEstado,
       route: AppRoutes.estadoSolicitudes,
       icon: Icons.dashboard_outlined,
     ),
     _DrawerMenuItem(
-      label: 'Cartera vencida',
+      label: AppStrings.drawerCobranza,
       route: AppRoutes.cobranza,
       icon: Icons.warning_amber_rounded,
     ),
     _DrawerMenuItem(
-      label: 'Reportes',
+      label: AppStrings.drawerReportes,
       route: AppRoutes.reportes,
       icon: Icons.bar_chart_rounded,
     ),
@@ -62,6 +64,7 @@ class OficialDrawer extends StatelessWidget {
 
   void _cerrarSesion(BuildContext context) {
     Navigator.pop(context);
+    AuthOficialRepository.instance.signOut();
     Navigator.pushNamedAndRemoveUntil(
       context,
       AppRoutes.login,
@@ -97,7 +100,7 @@ class OficialDrawer extends StatelessWidget {
                       color: AppColors.gestionRecuperacionMora,
                     ),
                     title: Text(
-                      'Cerrar sesión',
+                      AppStrings.drawerLogout,
                       style: TextStyle(
                         color: AppColors.gestionRecuperacionMora,
                         fontWeight: FontWeight.w600,
@@ -156,14 +159,14 @@ class _DrawerHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Alfin Banco',
+                      AppStrings.bankName,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             color: AppColors.white,
                             fontWeight: FontWeight.w800,
                           ),
                     ),
                     Text(
-                      'Fuerza de Ventas',
+                      AppStrings.appName,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.white.withValues(alpha: 0.85),
                           ),
@@ -185,14 +188,14 @@ class _DrawerHeader extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            'Oficial de Crédito',
+                    AppStrings.officerRole,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.white.withValues(alpha: 0.9),
                 ),
           ),
           const SizedBox(height: 8),
           Chip(
-            label: const Text('Modo demostración'),
+            label: const Text(AppStrings.demoBadge),
             backgroundColor: AppColors.white.withValues(alpha: 0.15),
             labelStyle: const TextStyle(
               color: AppColors.white,

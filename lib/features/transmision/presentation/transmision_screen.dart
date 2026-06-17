@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_strings.dart';
 import '../../../core/constants/app_routes.dart';
 import '../domain/transmission_model.dart';
 import 'transmision_viewmodel.dart';
@@ -58,7 +59,7 @@ class _TransmisionScreenState extends State<TransmisionScreen> {
       builder: (context, _) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Transmisión electrónica'),
+            title: const Text(AppStrings.transmisionTitle),
           ),
           body: _vm.isLoading && _vm.pasos.isEmpty
               ? const Center(child: CircularProgressIndicator())

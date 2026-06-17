@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 
+import '../../../core/supabase/supabase_helper.dart';
+import '../data/solicitud_repository.dart';
 import '../domain/credit_request_model.dart';
 
 /// ViewModel del wizard de solicitud de crédito (HU-V04).
@@ -416,7 +418,27 @@ class SolicitudCreditoViewModel extends ChangeNotifier {
     _successMessage = null;
     notifyListeners();
 
-    await Future<void>.delayed(const Duration(milliseconds: 1200));
+    final model = buildModel();
+
+    if (SupabaseHelper.hasSession) {
+      try {
+        SupabaseHelper.log('SolicitudCreditoViewModel submit Supabase');
+        final result =
+            await SolicitudRepository.instance.insertSolicitud(model);
+        _numeroExpediente = result.numeroExpediente;
+        _estadoSolicitud = EstadoSolicitud.enviadoDemo;
+        _successMessage =
+            'Solicitud registrada en Supabase. Expediente $_numeroExpediente.';
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } catch (error, stackTrace) {
+        SupabaseHelper.log('solicitud falló, usando fallback mock');
+        SupabaseHelper.logError(error, stackTrace);
+      }
+    }
+
+    await Future<void>.delayed(const Duration(milliseconds: 800));
 
     _numeroExpediente =
         'ALF-LOCAL-${_expedienteSecuencia.toString().padLeft(4, '0')}';
@@ -424,7 +446,7 @@ class SolicitudCreditoViewModel extends ChangeNotifier {
     _estadoSolicitud = EstadoSolicitud.enviadoDemo;
 
     _successMessage =
-        'Solicitud registrada. Expediente $_numeroExpediente (${_estadoSolicitud.label}).';
+        'Solicitud registrada localmente. Expediente $_numeroExpediente (${_estadoSolicitud.label}).';
 
     _isLoading = false;
     notifyListeners();

@@ -1,4 +1,4 @@
-# Resumen técnico — App Fuerza de Ventas Alfin Banco
+# Resumen técnico — App Fuerza de Ventas Banco Alfin
 
 ## Estructura de carpetas
 

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_strings.dart';
 import '../../../shared/widgets/oficial_drawer.dart';
+import '../../../shared/widgets/app_filter_chip.dart';
 import '../domain/report_model.dart';
 import 'reportes_viewmodel.dart';
 
@@ -51,7 +53,7 @@ class _ReportesScreenState extends State<ReportesScreen> {
       builder: (context, _) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Reportes'),
+            title: const Text(AppStrings.reportesTitle),
           ),
           drawer: const OficialDrawer(),
           body: _vm.isLoading && _vm.report == null
@@ -144,12 +146,10 @@ class _PeriodChips extends StatelessWidget {
           final selected = vm.selectedPeriod == period;
           return Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
-              label: Text(period),
+            child: AppFilterChip(
+              label: period,
               selected: selected,
               onSelected: (_) => vm.changePeriod(period),
-              selectedColor: AppColors.secondary.withValues(alpha: 0.2),
-              checkmarkColor: AppColors.secondary,
             ),
           );
         }).toList(),

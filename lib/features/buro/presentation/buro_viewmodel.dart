@@ -1,9 +1,13 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/supabase/supabase_helper.dart';
+import '../data/buro_repository.dart';
 import '../domain/buro_result_model.dart';
 
 /// ViewModel de consulta de buró y listas (HU-V08).
 class BuroViewModel extends ChangeNotifier {
+  final BuroRepository _repo = BuroRepository.instance;
+
   bool _isLoading = false;
   String? _errorMessage;
   String? _successMessage;
@@ -31,6 +35,11 @@ class BuroViewModel extends ChangeNotifier {
 
   bool get puedeContinuar =>
       tieneResultado && (_resultado?.puedeContinuarSolicitud ?? false);
+
+  /// Aviso cuando el resultado mock se muestra pero Supabase no guardó.
+  String? get supabaseWarningMessage => _supabaseWarningMessage;
+
+  String? _supabaseWarningMessage;
 
   Future<void> loadClient(String? clientId) async {
     _isLoading = true;
@@ -95,6 +104,7 @@ class BuroViewModel extends ChangeNotifier {
     _isLoading = true;
     _errorMessage = null;
     _successMessage = null;
+    _supabaseWarningMessage = null;
     _resultado = null;
     _status = null;
     notifyListeners();
@@ -105,6 +115,24 @@ class BuroViewModel extends ChangeNotifier {
     _resultado = mock;
     _status = mock.status;
     _successMessage = 'Consulta de buró completada.';
+
+    if (SupabaseHelper.hasSession) {
+      try {
+        await _repo.saveConsulta(
+          resultado: mock,
+          consentimientoAceptado: _consentimientoAceptado,
+        );
+        _successMessage = 'Consulta de buró completada y registrada.';
+      } catch (error, stackTrace) {
+        SupabaseHelper.log('buro guardado falló, se mantiene resultado mock');
+        SupabaseHelper.logError(error, stackTrace);
+        _supabaseWarningMessage =
+            'Consulta realizada en modo local. No se pudo guardar en Supabase.';
+      }
+    } else {
+      SupabaseHelper.log('buro sin sesión, no se insertará');
+    }
+
     _isLoading = false;
     notifyListeners();
   }

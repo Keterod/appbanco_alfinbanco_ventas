@@ -1,4 +1,4 @@
-# Checklist de evaluación — App Fuerza de Ventas Alfin Banco
+# Checklist de evaluación — App Fuerza de Ventas Banco Alfin
 
 **Versión:** mock/local demostrativa  
 **Fecha de referencia:** junio 2026  
@@ -18,7 +18,7 @@
 | Detalle con línea de tiempo | Cumple | `EstadoSolicitudDetalleScreen` — `/estado-solicitud-detalle` | Timeline vertical, motivo/condición según caso. |
 | Cartera vencida | Cumple | `CobranzaScreen` — `/cobranza` | Prioridad preventiva/prioritaria/urgente, filtros. |
 | Registro de acción de cobranza | Cumple | `CobranzaAccionScreen` — `/cobranza-accion` | Formulario con validaciones, actualiza listado. |
-| Branding Alfin Banco | Cumple | Login, Home, AppBars, `AppColors` | Logo, morado/naranja institucional. |
+| Branding Banco Alfin | Cumple | Login, Home, AppBars, `AppColors` | Logo, morado/naranja institucional. |
 | Arquitectura MVVM | Cumple | `features/*/presentation/*_viewmodel.dart` | Screens + ChangeNotifier + modelos domain. |
 | Navegación funcional | Cumple | `app_routes.dart`, flujo end-to-end | MaterialApp rutas nombradas, sin rutas huérfanas críticas. |
 | Datos hardcodeados / mock | Cumple | ViewModels y `*_mock_data.dart` / repositorios locales | Sin backend en flujo evaluable. |
