@@ -1,82 +1,80 @@
 # Pendientes técnicos — App Fuerza de Ventas
 
-> Este documento registra los pendientes técnicos identificados durante la Fase 1.
-> Se actualizará en fases posteriores.
+> Actualizado durante Fase 2 — Auditoría Diferencial.
+> Clasificación: ✅ Ya implementado | 🔴 Crítico | 🟡 Importante | ⏸️ Después | 🟢 Opcional
 
 ---
 
-## 🔴 Críticos para integración final
+## ✅ Ya implementado, no rehacer
 
-| # | Pendiente | Archivo(s) | Impacto |
-|---|-----------|------------|---------|
-| 1 | **Supabase Auth real** — Reemplazar el login demo por autenticación contra `supabase_flutter` con tabla `oficiales` y roles. El código ya tiene la estructura lista. | `auth_oficial_repository.dart`, `auth_oficial_viewmodel.dart` | Sin esto no hay seguridad real |
-| 2 | **Conectar repositorios a Supabase** — `CarteraRepository`, `FichaClienteRepository`, `BuroRepository`, `SolicitudRepository`, `CobranzaRepository` ya tienen la estructura para consultas Supabase pero no se usan en flujo demo (los ViewModels cargan datos mock directamente). | `cartera_repository.dart`, `ficha_cliente_repository.dart`, `buro_repository.dart`, `solicitud_repository.dart`, `cobranza_repository.dart` | Sin conexión real no hay datos de producción |
-| 3 | **Configurar almacenamiento seguro de claves** — `supabase_config.dart` contiene URL y anon key hardcodeadas. Mover a variables de entorno o `flutter_secure_storage`. | `lib/core/supabase/supabase_config.dart` | Riesgo de seguridad |
-| 4 | **Validar sintaxis `?clienteId`** — Revisar si `?clienteId` es sintaxis válida en Dart para null-aware spread en contextos de mapa. | `solicitud_repository.dart:47`, `buro_repository.dart:42` | Posible error de compilación |
-| 5 | **Resolver IDs mock → UUID real** — `SupabaseLookup` ya implementa 8 estrategias de búsqueda; validar que funcionen correctamente con datos reales. | `supabase_lookup.dart` | Integridad de referencias |
-
----
-
-## 🟡 Importantes para App Fuerza de Ventas
-
-| # | Pendiente | Archivo(s) | Impacto |
-|---|-----------|------------|---------|
-| 6 | **Implementar SQLite offline** — Las tablas ya existen en `LocalDb` (`visitas_pendientes`, `solicitudes_borrador`, `cartera_cache`, `cartera_orden_local`). Falta conectar los repositorios y crear cola de sincronización. | `local_db.dart`, repositorios | Sin offline no hay trabajo en campo |
-| 7 | **Persistencia entre sesiones** — Al reiniciar la app se pierden todos los datos mock. Implementar SharedPreferences o SQLite para mantener estado. | Todos los ViewModels | Experiencia de usuario |
-| 8 | **Generación de expediente real** — `_generateExpediente()` en `solicitud_repository.dart` genera `EXP-ALF-2026-{timestamp}`. Debe integrarse con secuencia de Supabase. | `solicitud_repository.dart` | Trazabilidad de solicitudes |
-| 9 | **Validación de fecha de nacimiento** — No hay validación de formato `dd/mm/aaaa` en el wizard de solicitud. | `solicitud_credito_viewmodel.dart` | Calidad de datos |
-| 10 | **Marcador visual de campos obligatorios** — Los labels tienen "*" pero no hay validación visual de error en campos vacíos. | `solicitud_credito_screen.dart` | UX |
-| 11 | **Datos mock para IDs de mora** — `cli-006` a `cli-010` existen en cobranza pero no tienen datos en `FichaClienteViewModel`. | `ficha_cliente_viewmodel.dart` | Navegación incompleta |
-| 12 | **Simular carga real en repositorios** — Los ViewModels cargan datos mock directamente. Los repositorios Supabase deberían ser la fuente única. | Todos los ViewModels | Arquitectura |
-| 13 | **Unificar nombre del proyecto en archivos de documentación existentes** — `README.md`, `docs/CHECKLIST_EVALUACION.md`, `docs/RESUMEN_TECNICO.md`, `docs/EVIDENCIAS_DEMO.md` aún usan "Alfin Banco" en lugar de "Banco Alfin". | `README.md`, `docs/*.md` | Consistencia de marca |
+| # | Funcionalidad | Archivos clave | Notas |
+|---|--------------|----------------|-------|
+| 1 | Login Supabase Auth (signInWithPassword) | `auth_oficial_repository.dart`, `auth_oficial_viewmodel.dart` | Usa email derivado de código + RPC demo data |
+| 2 | Perfil del asesor | `asesor_model.dart`, `asesor_repository.dart` | Carga desde `asesores_negocio` por `user_id` |
+| 3 | Dashboard (interfaz) | `home_oficial_screen.dart`, `home_oficial_viewmodel.dart` | Resumen, accesos rápidos, actividad reciente |
+| 4 | Cartera diaria (interfaz + repo) | `cartera_diaria_screen.dart`, `cartera_repository.dart` | Repository Supabase listo, ViewModel con fallback mock |
+| 5 | Ficha del cliente (interfaz + repo) | `ficha_cliente_screen.dart`, `ficha_cliente_repository.dart` | Consulta 3 tablas Supabase |
+| 6 | Solicitud crédito stepper 4 pasos | `solicitud_credito_screen.dart`, `solicitud_credito_viewmodel.dart` | 21 reglas validación, simulador, envío Supabase |
+| 7 | Simulador de cuota (TEA) | `solicitud_credito_viewmodel.dart:257-280` | Fórmula TEA mensual, cuota fija |
+| 8 | Checklist documentos | `documentos_screen.dart`, `documentos_viewmodel.dart` | 7 tipos, progreso, vista previa simulada |
+| 9 | Transmisión (interfaz) | `transmision_screen.dart`, `transmision_viewmodel.dart` | 6 pasos, progreso, confirmación |
+| 10 | Estado solicitudes (interfaz) | `estado_solicitudes_screen.dart`, `estado_solicitud_detalle_screen.dart` | Filtros, resumen, timeline |
+| 11 | Ruta visitas (interfaz) | `ruta_screen.dart`, `ruta_viewmodel.dart` | Mapa simulado, optimización, marcar visitado |
+| 12 | Cobranza (interfaz) | `cobranza_screen.dart`, `cobranza_accion_screen.dart` | Listado, filtros, formulario con validación |
+| 13 | Reportes (interfaz) | `reportes_screen.dart`, `reportes_viewmodel.dart` | 3 periodos, 8 indicadores, progreso |
+| 14 | SQLite esquema (4 tablas) | `local_db.dart` | Tablas creadas, pendiente conectar |
+| 15 | Repositorios Supabase (cartera, ficha, buró, solicitud, cobranza) | `*_repository.dart` | Estructura lista para datos reales |
+| 16 | Branding unificado | `app_strings.dart`, `app_colors.dart` | "Banco Alfin · App Fuerza de Ventas" |
 
 ---
 
-## 🟢 Opcionales o mejoras
+## 🔴 Pendiente crítico para integración final
 
-| # | Pendiente | Archivo(s) | Beneficio |
-|---|-----------|------------|-----------|
-| 14 | **Migrar a go_router** — Actualmente se usa `MaterialApp` con `routes: {}`. `go_router` ya está declarado en `pubspec.yaml`. Migrar cuando el equipo crezca. | `app_navigation.dart` | Navegación declarativa, deep linking |
-| 15 | **Adoptar Riverpod en UI** — `ProviderScope` ya existe en `main.dart`. Migrar pantallas de `ChangeNotifier` a `Riverpod` gradualmente. | Todos los screens | Mejor testabilidad, menos boilerplate |
-| 16 | **Agregar fl_chart para gráficos** — Dependencia ya declarada. Reportes usan solo números; se podrían agregar gráficos de barras. | `reportes_screen.dart` | Visualización de datos |
-| 17 | **Eliminar dependencias no usadas** — Limpiar `pubspec.yaml` eliminando dependencias que no se usan (ver lista en FASE1_BASE_PROYECTO.md). | `pubspec.yaml` | Build más rápido, menos vulnerabilidades |
-| 18 | **Agregar tests unitarios** — Especialmente para ViewModels con lógica de negocio (simulador de cuota, validación de buró, optimización de ruta). | — | Calidad y regresión |
-| 19 | **Agregar tests de widgets** — Para flujos críticos (login → solicitud → transmisión). | — | Calidad y regresión |
-| 20 | **Internacionalización (i18n)** — Preparar para soporte multilingüe usando `intl` (ya declarado). | — | Escalabilidad |
-| 21 | **Modo oscuro** — El tema Material 3 está preparado; solo falta definir paleta oscura en `AppTheme`. | `app_theme.dart` | Experiencia de usuario |
-| 22 | **Documentar API de los ViewModels** — Agregar doc comments a métodos públicos. | ViewModels | Mantenibilidad |
+| # | Pendiente | Archivos | Impacto |
+|---|-----------|----------|---------|
+| C1 | **Configuración segura de Supabase** — URL y anon key hardcodeadas en texto plano | `supabase_config.dart:2-5` | Riesgo de seguridad en producción |
+| C2 | **Sin sesión persistente** — No se configura `persistSession` en inicialización | `main.dart:13-23` | Usuario debe loguearse cada vez que abre la app |
+| C3 | **Dashboard sin datos reales** — Métricas hardcodeadas, no consulta Supabase | `home_oficial_viewmodel.dart:43-86` | Sin valor real para el oficial |
+| C4 | **Estado solicitudes desde mock** — No consulta `solicitudes_credito` en Supabase | `estado_solicitudes_viewmodel.dart`, `request_status_mock_data.dart` | El oficial no puede ver estado real de sus solicitudes |
+| C5 | **Reportes desde mock** — Indicadores no reflejan datos reales | `reportes_viewmodel.dart:81-137` | Reportes no útiles para gestión |
 
 ---
 
-## ⏸️ Funcionalidades para después (Fase 3+)
+## 🟡 Pendiente importante para App Fuerza de Ventas
 
-| Funcionalidad | Dependencia declarada | Notas |
-|---------------|-----------------------|-------|
-| **Cámara real para documentos** | `camera`, `image_picker`, `image` | Reemplazar `_simulateCapture()` en `documentos_viewmodel.dart` |
-| **Firma digital real** | `signature` | Reemplazar `registrarFirmaSimulada()` con widget de firma |
-| **PDF real** | `pdf`, `printing` | Implementar exportación en estado solicitudes y reportes |
-| **Notificaciones push** | `firebase_messaging`, `flutter_local_notifications` | Implementar Firebase Cloud Messaging |
-| **Mapa avanzado (Google Maps)** | `google_maps_flutter` | Reemplazar mapa simulado en `ruta_screen.dart` |
-| **Tareas en segundo plano** | `workmanager` | Sincronización offline programada |
-| **Almacenamiento seguro** | `flutter_secure_storage` | Para tokens y claves de sesión |
-| **Visor de imágenes** | `photo_view` | Para vista previa de documentos capturados |
-| **Navegación externa (Waze/Maps)** | — | Abrir app externa con coordenadas desde ruta |
+| # | Pendiente | Archivos | Impacto |
+|---|-----------|----------|---------|
+| I1 | **GPS real** — Coordenadas fijas en cobranza, solicitud y ruta. No se usa `geolocator` | `cobranza_accion_viewmodel.dart:20`, `ruta_viewmodel.dart`, `solicitud_repository.dart:23-24` | Sin ubicación real no hay trazabilidad de campo |
+| I2 | **SQLite offline** — 4 tablas creadas pero nunca escritas ni leídas | `local_db.dart`, todos los ViewModels | Sin offline no hay operatividad sin internet |
+| I3 | **Cola de sincronización** — No existe `sync_outbox`/`sync_log` | — | Sin cola no se puede sincronizar offline→online |
+| I4 | **Ficha cliente sin datos para IDs de mora** — `cli-006` a `cli-010` sin mock | `ficha_cliente_viewmodel.dart` | Navegación incompleta desde cobranza |
+| I5 | **Roles** — No existe campo `rol` en `AsesorModel`. Sin control de acceso | `asesor_model.dart` | Todos los usuarios ven lo mismo |
 
 ---
 
-## Resumen de Fase 1 — Cambios realizados
+## ⏸️ Pendiente para después (Fase 3+)
 
-| Categoría | Detalle |
-|-----------|---------|
-| **Branding** | Nombre del banco unificado a "Banco Alfin" en todas las pantallas. App bars, drawer, login, consentimiento de buró. |
-| **Constantes centralizadas** | Creado `lib/core/constants/app_strings.dart` con todos los textos visibles del sistema. |
-| **Android label** | Cambiado de `"ventas"` a `"App Fuerza de Ventas"` en `AndroidManifest.xml`. |
-| **iOS labels** | `CFBundleDisplayName` y `CFBundleName` actualizados a `"App Fuerza de Ventas"` en `Info.plist`. |
-| **Análisis estático** | `flutter analyze` sin issues (0 errores, 0 warnings). |
-| **Documentación** | Creados `docs/FASE1_BASE_PROYECTO.md` y `docs/PENDIENTES_TECNICOS.md`. |
-| **Archivos modificados** | `app_navigation.dart`, `login_oficial_screen.dart`, `home_oficial_screen.dart`, `cartera_diaria_screen.dart`, `oficial_drawer.dart`, `buro_screen.dart`, `transmision_screen.dart`, `ruta_screen.dart`, `documentos_screen.dart`, `estado_solicitudes_screen.dart`, `cobranza_screen.dart`, `cobranza_accion_screen.dart`, `reportes_screen.dart`, `AndroidManifest.xml`, `Info.plist`. |
-| **Archivos creados** | `app_strings.dart`, `docs/FASE1_BASE_PROYECTO.md`, `docs/PENDIENTES_TECNICOS.md`. |
+| # | Pendiente | Dependencias |
+|---|-----------|-------------|
+| D1 | **Cámara real** — Reemplazar captura simulada en documentos | `camera`, `image_picker` |
+| D2 | **Firma digital real** — Reemplazar `registrarFirmaSimulada()` | `signature` |
+| D3 | **PDF real** — Exportación de reportes y fichas | `pdf`, `printing` |
+| D4 | **Notificaciones push** — Cambio de estado de solicitud | `firebase_messaging`, `flutter_local_notifications` |
+| D5 | **Cronograma de cuotas** — Desglose mes a mes en simulación | — |
+| D6 | **Pre-evaluación de cliente** — Puntuación y reglas de negocio | — |
+| D7 | **Bloqueo por intentos fallidos** — Protección contra fuerza bruta | — |
+| D8 | **Integración buró real (SBS/Equifax)** — Reemplazar datos mock | — |
 
-### Recomendación concreta para iniciar Fase 2
+---
 
-**Prioridad máxima:** Conectar Supabase Auth real y reemplazar el login demo. Esto habilita sesiones reales y permite probar el flujo completo con datos del backend. Paralelamente, implementar SQLite offline con cola de sincronización para garantizar operatividad en campo sin conectividad.
+## 🟢 Opcional
+
+| # | Pendiente | Beneficio |
+|---|-----------|-----------|
+| O1 | **Migrar a go_router** — Navegación declarativa | Deep linking, mejor mantenibilidad |
+| O2 | **Adoptar Riverpod en UI** — Mejor testabilidad | Menos boilerplate, estado más predecible |
+| O3 | **Agregar fl_chart** — Gráficos en reportes | Visualización de datos |
+| O4 | **Eliminar dependencias no usadas** — Reducir build time | Menos vulnerabilidades |
+| O5 | **Tests unitarios y widget** — Cobertura en flujos críticos | Calidad y regresión |
+| O6 | **Modo oscuro** — Tema Material 3 alternativo | Experiencia de usuario |
+| O7 | **Internacionalización (i18n)** — Soporte multilingüe | Escalabilidad |
