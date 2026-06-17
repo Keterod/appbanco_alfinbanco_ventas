@@ -29,6 +29,7 @@ class _CobranzaAccionScreenState extends State<CobranzaAccionScreen> {
   void initState() {
     super.initState();
     _vm = CobranzaAccionViewModel(overdueClientId: widget.overdueClientId);
+    _vm.captureLocation();
   }
 
   @override
@@ -208,12 +209,59 @@ class _CobranzaAccionScreenState extends State<CobranzaAccionScreen> {
                           color: AppColors.lightBackground,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
-                          'Coordenadas simuladas: '
-                          '${CobranzaAccionViewModel.simulatedLat}, '
-                          '${CobranzaAccionViewModel.simulatedLng}',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
+                        child: _vm.isLocating
+                            ? Row(
+                                children: [
+                                  const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Obteniendo ubicación…',
+                                    style: Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                ],
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        _vm.locationIsReal
+                                            ? Icons.gps_fixed
+                                            : Icons.gps_off,
+                                        size: 16,
+                                        color: _vm.locationIsReal
+                                            ? AppColors.semaforoNormal
+                                            : AppColors.gestionRecuperacionMora,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          _vm.locationStatus ?? 'Ubicación no disponible',
+                                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                color: _vm.locationIsReal
+                                                    ? AppColors.textSecondary
+                                                    : AppColors.gestionRecuperacionMora,
+                                              ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (_vm.lat != null && _vm.lng != null) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${_vm.lat!.toStringAsFixed(5)}, ${_vm.lng!.toStringAsFixed(5)}',
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                                  ],
+                                ],
+                              ),
                       ),
                     ],
                   ),

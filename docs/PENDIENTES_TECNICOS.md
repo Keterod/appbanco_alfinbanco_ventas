@@ -1,6 +1,6 @@
 # Pendientes técnicos — App Fuerza de Ventas
 
-> Actualizado durante Fase 2 — Auditoría Diferencial.
+> Actualizado durante Fase 2B — GPS Real.
 > Clasificación: ✅ Ya implementado | 🔴 Crítico | 🟡 Importante | ⏸️ Después | 🟢 Opcional
 
 ---
@@ -25,6 +25,7 @@
 | 14 | SQLite esquema (4 tablas) | `local_db.dart` | Tablas creadas, pendiente conectar |
 | 15 | Repositorios Supabase (cartera, ficha, buró, solicitud, cobranza) | `*_repository.dart` | Estructura lista para datos reales |
 | 16 | Branding unificado | `app_strings.dart`, `app_colors.dart` | "Banco Alfin · App Fuerza de Ventas" |
+| 17 | **GPS real** — Ubicación real del oficial en cobranza, solicitud y ruta con fallback controlado | `location_service.dart`, `cobranza_accion_viewmodel.dart`, `solicitud_credito_viewmodel.dart`, `ruta_viewmodel.dart` | `geolocator` + `url_launcher` + permisos |
 
 ---
 
@@ -44,8 +45,7 @@
 
 | # | Pendiente | Archivos | Impacto |
 |---|-----------|----------|---------|
-| I1 | **GPS real** — Coordenadas fijas en cobranza, solicitud y ruta. No se usa `geolocator` | `cobranza_accion_viewmodel.dart:20`, `ruta_viewmodel.dart`, `solicitud_repository.dart:23-24` | Sin ubicación real no hay trazabilidad de campo |
-| I2 | **SQLite offline** — 4 tablas creadas pero nunca escritas ni leídas | `local_db.dart`, todos los ViewModels | Sin offline no hay operatividad sin internet |
+| I1 | **SQLite offline** — 4 tablas creadas pero nunca escritas ni leídas | `local_db.dart`, todos los ViewModels | Sin offline no hay operatividad sin internet |
 | I3 | **Cola de sincronización** — No existe `sync_outbox`/`sync_log` | — | Sin cola no se puede sincronizar offline→online |
 | I4 | **Ficha cliente sin datos para IDs de mora** — `cli-006` a `cli-010` sin mock | `ficha_cliente_viewmodel.dart` | Navegación incompleta desde cobranza |
 | I5 | **Roles** — No existe campo `rol` en `AsesorModel`. Sin control de acceso | `asesor_model.dart` | Todos los usuarios ven lo mismo |

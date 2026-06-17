@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
@@ -57,6 +58,42 @@ class _RutaScreenState extends State<RutaScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                   children: [
                     _SummaryCard(vm: _vm),
+                    if (_vm.locationStatus != null) ...[
+                      const SizedBox(height: 8),
+                      Card(
+                        color: AppColors.lightBackground,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          child: Row(
+                            children: [
+                              _vm.isLocating
+                                  ? const SizedBox(
+                                      width: 16, height: 16,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : Icon(
+                                      _vm.oficialLat != null
+                                          ? Icons.gps_fixed
+                                          : Icons.gps_off,
+                                      size: 18,
+                                      color: _vm.oficialLat != null
+                                          ? AppColors.semaforoNormal
+                                          : AppColors.gestionRecuperacionMora,
+                                    ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _vm.locationStatus!,
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -114,8 +151,15 @@ class _RutaScreenState extends State<RutaScreen> {
                             AppRoutes.fichaCliente,
                             arguments: v.clientId,
                           ),
-                          onNavegar: () =>
-                              _showSnack(_vm.openNavigation(v.clientId)),
+                          onNavegar: () async {
+                              final uri = _vm.openNavigation(v.clientId);
+                              final url = Uri.tryParse(uri);
+                              if (url != null && await canLaunchUrl(url)) {
+                                await launchUrl(url, mode: LaunchMode.externalApplication);
+                              } else {
+                                _showSnack('No se pudo abrir el mapa.');
+                              }
+                            },
                           onMarcarVisitado: v.isPendiente
                               ? () {
                                   _vm.markAsVisited(v.clientId);

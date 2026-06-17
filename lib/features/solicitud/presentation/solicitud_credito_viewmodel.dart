@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 
+import '../../../core/location/location_service.dart';
 import '../../../core/supabase/supabase_helper.dart';
 import '../data/solicitud_repository.dart';
 import '../domain/credit_request_model.dart';
@@ -10,11 +11,22 @@ import '../domain/credit_request_model.dart';
 class SolicitudCreditoViewModel extends ChangeNotifier {
   static const double teaReferencialDefault = 0.36;
   static int _expedienteSecuencia = 1;
+  final LocationService _locationService = LocationService.instance;
 
   int _pasoActual = 0;
   bool _isLoading = false;
+  bool _isLocating = false;
   String? _errorMessage;
   String? _successMessage;
+  String? _locationStatus;
+
+  double? _latCaptura;
+  double? _lngCaptura;
+
+  String? get locationStatus => _locationStatus;
+  bool get isLocating => _isLocating;
+  double? get latCaptura => _latCaptura;
+  double? get lngCaptura => _lngCaptura;
 
   String? _clientId;
   String _nombres = '';
@@ -48,6 +60,29 @@ class SolicitudCreditoViewModel extends ChangeNotifier {
 
   int get pasoActual => _pasoActual;
   bool get isLoading => _isLoading;
+
+  Future<void> captureLocation() async {
+    if (_latCaptura != null) return;
+    _isLocating = true;
+    _locationStatus = 'Obteniendo ubicación…';
+    notifyListeners();
+
+    final result = await _locationService.getCurrentPositionWithFallback();
+
+    _latCaptura = result.lat;
+    _lngCaptura = result.lng;
+
+    if (result.hasLocation && !result.fromFallback) {
+      _locationStatus = 'Ubicación real capturada.';
+    } else if (result.hasLocation && result.fromFallback) {
+      _locationStatus = 'Usando ubicación de referencia.';
+    } else {
+      _locationStatus = result.errorMessage ?? 'Ubicación no disponible.';
+    }
+
+    _isLocating = false;
+    notifyListeners();
+  }
   String? get errorMessage => _errorMessage;
   String? get successMessage => _successMessage;
   String? get clientId => _clientId;
@@ -418,13 +453,18 @@ class SolicitudCreditoViewModel extends ChangeNotifier {
     _successMessage = null;
     notifyListeners();
 
+    await captureLocation();
+
     final model = buildModel();
 
     if (SupabaseHelper.hasSession) {
       try {
         SupabaseHelper.log('SolicitudCreditoViewModel submit Supabase');
-        final result =
-            await SolicitudRepository.instance.insertSolicitud(model);
+        final result = await SolicitudRepository.instance.insertSolicitud(
+          model,
+          latCaptura: _latCaptura,
+          lngCaptura: _lngCaptura,
+        );
         _numeroExpediente = result.numeroExpediente;
         _estadoSolicitud = EstadoSolicitud.enviadoDemo;
         _successMessage =

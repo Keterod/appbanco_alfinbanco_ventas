@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/location/location_service.dart';
 import '../../../core/supabase/supabase_helper.dart';
 import '../data/cobranza_local_repository.dart';
 import '../data/cobranza_repository.dart';
@@ -16,14 +17,21 @@ class CobranzaAccionViewModel extends ChangeNotifier {
   final String overdueClientId;
   final CobranzaViewModel _listVm;
   final CobranzaLocalRepository _repo = CobranzaLocalRepository.instance;
+  final LocationService _locationService = LocationService.instance;
 
-  static const double simulatedLat = -12.0464;
-  static const double simulatedLng = -77.0428;
+  static const double fallbackLat = -12.0464;
+  static const double fallbackLng = -77.0428;
   static const int maxObservaciones = 200;
 
   bool _isLoading = false;
+  bool _isLocating = false;
   String? _errorMessage;
   String? _successMessage;
+  String? _locationStatus;
+
+  double? _lat;
+  double? _lng;
+  bool _locationFromFallback = false;
 
   CollectionManagementType? _tipoGestion;
   CollectionResult? _resultado;
@@ -31,6 +39,12 @@ class CobranzaAccionViewModel extends ChangeNotifier {
   DateTime? _fechaCompromiso;
   double _montoCompromiso = 0;
   String _observaciones = '';
+
+  double? get lat => _lat;
+  double? get lng => _lng;
+  bool get isLocating => _isLocating;
+  String? get locationStatus => _locationStatus;
+  bool get locationIsReal => !_locationFromFallback && _lat != null;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -45,6 +59,32 @@ class CobranzaAccionViewModel extends ChangeNotifier {
   OverdueClientModel? get client {
     _repo.ensureInitialized();
     return _repo.getById(overdueClientId);
+  }
+
+  Future<void> captureLocation() async {
+    _isLocating = true;
+    _locationStatus = 'Obteniendo ubicación…';
+    _lat = null;
+    _lng = null;
+    _locationFromFallback = false;
+    notifyListeners();
+
+    final result = await _locationService.getCurrentPositionWithFallback();
+
+    _lat = result.lat;
+    _lng = result.lng;
+    _locationFromFallback = result.fromFallback;
+
+    if (result.hasLocation && !result.fromFallback) {
+      _locationStatus = 'Ubicación real: ${result.lat!.toStringAsFixed(5)}, ${result.lng!.toStringAsFixed(5)}';
+    } else if (result.hasLocation && result.fromFallback) {
+      _locationStatus = '${result.errorMessage ?? "Ubicación no disponible"} — usando coordenadas de referencia.';
+    } else {
+      _locationStatus = result.errorMessage ?? 'Ubicación no disponible.';
+    }
+
+    _isLocating = false;
+    notifyListeners();
   }
 
   bool get showMontoPagado => _resultado == CollectionResult.pagoParcial;
@@ -129,10 +169,17 @@ class CobranzaAccionViewModel extends ChangeNotifier {
       return false;
     }
 
+    if (_lat == null) {
+      await captureLocation();
+    }
+
     _isLoading = true;
     notifyListeners();
 
     await Future<void>.delayed(const Duration(milliseconds: 600));
+
+    final effectiveLat = _lat ?? fallbackLat;
+    final effectiveLng = _lng ?? fallbackLng;
 
     final action = CollectionActionModel(
       id: _repo.nextActionId(),
@@ -149,8 +196,8 @@ class CobranzaAccionViewModel extends ChangeNotifier {
       montoCompromiso:
           _resultado == CollectionResult.compromisoPago ? _montoCompromiso : null,
       observaciones: _observaciones.trim(),
-      lat: simulatedLat,
-      lng: simulatedLng,
+      lat: effectiveLat,
+      lng: effectiveLng,
       timestampGestion: DateTime.now(),
     );
 
@@ -167,7 +214,7 @@ class CobranzaAccionViewModel extends ChangeNotifier {
         _successMessage = SupabaseHelper.fallbackSaveMessage;
       }
     } else {
-      _successMessage = 'Gestión guardada. Coordenadas simuladas registradas.';
+      _successMessage = 'Gestión guardada. Coordenadas ${_locationFromFallback ? "de referencia" : "reales"} registradas.';
     }
 
     _isLoading = false;

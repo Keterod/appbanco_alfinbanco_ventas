@@ -44,35 +44,40 @@
 
 ---
 
-## Fase 2B — GPS real en visitas, cobranza y ubicación del negocio 📅
+## Fase 2B — GPS real en visitas, cobranza y ubicación del negocio ✅
 
 **Objetivo**: Reemplazar coordenadas fijas por geolocalización real usando `geolocator`.
 
-### Archivos probables a modificar
+### Archivos modificados
 
 | Archivo | Cambio |
 |---------|--------|
-| `cobranza_accion_viewmodel.dart` | Reemplazar `simulatedLat/simulatedLng` con `Geolocator.getCurrentPosition()` |
-| `cobranza_accion_screen.dart` | Mostrar ubicación real, agregar permisos |
-| `ruta_viewmodel.dart` | Actualizar coordenadas según ubicación actual del oficial |
-| `ruta_screen.dart` | Reemplazar mapa simulado con Google Maps |
-| `solicitud_repository.dart` | Usar coordenadas reales en lugar de fijas |
-| `solicitud_credito_viewmodel.dart` | Capturar ubicación al iniciar solicitud |
-| `android/app/src/main/AndroidManifest.xml` | Agregar permisos `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION` |
-| `ios/Runner/Info.plist` | Agregar `NSLocationWhenInUseUsageDescription` |
+| `lib/core/location/location_service.dart` | Servicio centralizado de geolocalización con `getCurrentPosition()`, `ensureLocationPermission()`, `getCurrentPositionWithFallback()` |
+| `cobranza_accion_viewmodel.dart` | Reemplazar `simulatedLat/simulatedLng` con `_lat/_lng` reales mediante `captureLocation()` |
+| `cobranza_accion_screen.dart` | Mostrar ubicación real con indicador GPS (verde real / naranja fallback) |
+| `ruta_viewmodel.dart` | Capturar ubicación del oficial como origen, `captureOficialLocation()`, `openNavigation()` retorna URI Google Maps con coordenadas reales |
+| `ruta_screen.dart` | Indicador de ubicación del oficial, navegación externa vía `url_launcher` + `launchUrl(externalApplication)` |
+| `solicitud_repository.dart` | Parámetros opcionales `latCaptura/lngCaptura` en `insertSolicitud()` |
+| `solicitud_credito_viewmodel.dart` | `captureLocation()` antes de envío, pasa coordenadas al repositorio |
+| `solicitud_credito_screen.dart` | Indicador GPS en paso de confirmación |
+| `android/app/src/main/AndroidManifest.xml` | Permisos `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION` |
+| `ios/Runner/Info.plist` | `NSLocationWhenInUseUsageDescription` |
+| `pubspec.yaml` | `url_launcher: ^6.3.0` |
 
-### Riesgo
-- Batería: el uso continuo de GPS puede agotar batería del dispositivo
-- Permisos: el usuario debe aceptar permisos de ubicación
-- Offline: GPS funciona sin internet pero la geocodificación inversa no
+### Gestión de riesgos
+- **Batería**: Solo se consulta GPS al abrir formulario o al cargar ruta (no continuo)
+- **Permisos**: `LocationService.ensureLocationPermission()` maneja denegado y denegado permanentemente
+- **Offline**: GPS funciona sin internet; fallback `(-12.0464, -77.0428)` cuando no hay ubicación
 
-### Criterio de aceptación
-- Al abrir cobranza y registrar gestión, se captura lat/lng real del dispositivo
-- En ruta de visitas, se muestra la ubicación actual del oficial en el mapa
-- Las coordenadas se guardan en Supabase y SQLite
+### Criterio de aceptación cumplido
+- ✅ Al abrir cobranza y registrar gestión, se captura lat/lng real del dispositivo
+- ✅ En ruta de visitas, se captura la ubicación actual del oficial como origen de navegación
+- ✅ Las coordenadas se guardan en payload Supabase (cuando haya sesión) o local
+- ✅ Fallback controlado con indicador visual "modo demo"
+- ✅ `flutter analyze`: 0 issues
 
-### Qué NO tocar todavía
-- Cámara, firma, PDF, notificaciones, roles, pre-evaluación
+### Documentación
+- `docs/FASE2B_GPS_REAL.md`
 
 ---
 
@@ -253,7 +258,7 @@
 |------|--------|-----------|-------------------|--------------|
 | **1** | Base del proyecto | Alta | Completada | — |
 | **2A** | Auditoría diferencial | Alta | Completada | Fase 1 |
-| **2B** | GPS real | **Crítica** | 1-2 semanas | Fase 2A |
+| **2B** | GPS real | **Crítica** | Completada | Fase 2A |
 | **2C** | Conexión Supabase real | Alta | 2-3 semanas | Fase 2A |
 | **2D** | SQLite offline | Alta | 2-3 semanas | Fase 2A |
 | **2E** | Sync outbox/log | Media | 1 semana | Fase 2D |

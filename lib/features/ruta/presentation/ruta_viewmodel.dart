@@ -1,17 +1,30 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/location/location_service.dart';
 import '../domain/route_visit_model.dart';
 
 /// ViewModel de planificación de ruta diaria (HU-V09).
 class RutaViewModel extends ChangeNotifier {
+  final LocationService _locationService = LocationService.instance;
+
   bool _isLoading = false;
+  bool _isLocating = false;
   String? _errorMessage;
   String? _successMessage;
+  String? _locationStatus;
   List<RouteVisitModel> _visitas = [];
   List<RouteVisitModel> _visitasIniciales = [];
   bool _modoOptimizado = false;
 
+  double? _oficialLat;
+  double? _oficialLng;
+  bool _locationFromFallback = false;
+
   bool get isLoading => _isLoading;
+  bool get isLocating => _isLocating;
+  String? get locationStatus => _locationStatus;
+  double? get oficialLat => _oficialLat;
+  double? get oficialLng => _oficialLng;
   String? get errorMessage => _errorMessage;
   String? get successMessage => _successMessage;
   List<RouteVisitModel> get visitas => List.unmodifiable(_visitas);
@@ -35,11 +48,36 @@ class RutaViewModel extends ChangeNotifier {
   List<RouteVisitModel> getVisitedVisits() =>
       _visitas.where((v) => v.isVisitado).toList(growable: false);
 
+  Future<void> captureOficialLocation() async {
+    _isLocating = true;
+    _locationStatus = 'Obteniendo ubicación del oficial…';
+    notifyListeners();
+
+    final result = await _locationService.getCurrentPositionWithFallback();
+
+    _oficialLat = result.lat;
+    _oficialLng = result.lng;
+    _locationFromFallback = result.fromFallback;
+
+    if (result.hasLocation && !result.fromFallback) {
+      _locationStatus = 'Oficial ubicado: ${result.lat!.toStringAsFixed(5)}, ${result.lng!.toStringAsFixed(5)}';
+    } else if (result.hasLocation && result.fromFallback) {
+      _locationStatus = '${result.errorMessage ?? "Ubicación no disponible"} — usando coordenadas de referencia.';
+    } else {
+      _locationStatus = result.errorMessage ?? 'Ubicación no disponible.';
+    }
+
+    _isLocating = false;
+    notifyListeners();
+  }
+
   Future<void> loadTodayRoute() async {
     _isLoading = true;
     _errorMessage = null;
     _successMessage = null;
     notifyListeners();
+
+    await captureOficialLocation();
 
     await Future<void>.delayed(const Duration(milliseconds: 450));
 
@@ -108,11 +146,15 @@ class RutaViewModel extends ChangeNotifier {
     }
 
     final visita = _visitas[index];
-    final msg =
-        'Navegación externa — función en siguiente fase. Destino: ${visita.clienteNombre}';
+    final originLat = _oficialLat ?? -12.0464;
+    final originLng = _oficialLng ?? -77.0428;
+    final uri = 'https://www.google.com/maps/dir/$originLat,$originLng/${visita.lat},${visita.lng}';
+    final msg = _oficialLat != null && !_locationFromFallback
+        ? 'Navegar a ${visita.clienteNombre} — abriendo Google Maps…'
+        : 'Navegar a ${visita.clienteNombre} (origen aproximado).';
     _successMessage = msg;
     notifyListeners();
-    return msg;
+    return uri;
   }
 
   static List<RouteVisitModel> _buildInitialVisits() {

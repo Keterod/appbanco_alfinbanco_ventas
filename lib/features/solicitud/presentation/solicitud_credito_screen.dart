@@ -31,6 +31,7 @@ class _SolicitudCreditoScreenState extends State<SolicitudCreditoScreen> {
     super.initState();
     _vm = SolicitudCreditoViewModel();
     _vm.loadInitialData(widget.clientId);
+    _vm.captureLocation();
   }
 
   @override
@@ -663,6 +664,46 @@ class _PasoConfirmacion extends StatelessWidget {
                     'Verifique la consulta de buró del cliente antes de enviar la solicitud.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          color: AppColors.lightBackground,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Icon(
+                  vm.isLocating
+                      ? Icons.gps_not_fixed
+                      : vm.latCaptura != null
+                          ? Icons.gps_fixed
+                          : Icons.gps_off,
+                  size: 18,
+                  color: vm.isLocating
+                      ? AppColors.textSecondary
+                      : vm.latCaptura != null
+                          ? AppColors.semaforoNormal
+                          : AppColors.gestionRecuperacionMora,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    vm.isLocating
+                        ? 'Obteniendo ubicación…'
+                        : vm.locationStatus ?? 'Ubicación no disponible',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: vm.isLocating
+                              ? AppColors.textSecondary
+                              : vm.latCaptura != null
+                                  ? AppColors.textSecondary
+                                  : AppColors.gestionRecuperacionMora,
                         ),
                   ),
                 ),

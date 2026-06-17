@@ -20,10 +20,14 @@ class SolicitudRepository {
   SolicitudRepository._();
   static final SolicitudRepository instance = SolicitudRepository._();
 
-  static const double _simulatedLat = -12.0464;
-  static const double _simulatedLng = -77.0428;
+  static const double _fallbackLat = -12.0464;
+  static const double _fallbackLng = -77.0428;
 
-  Future<SolicitudInsertResult> insertSolicitud(CreditRequestModel model) async {
+  Future<SolicitudInsertResult> insertSolicitud(
+    CreditRequestModel model, {
+    double? latCaptura,
+    double? lngCaptura,
+  }) async {
     SupabaseHelper.log('solicitud insert iniciado');
 
     if (!SupabaseHelper.hasSession) {
@@ -63,8 +67,8 @@ class SolicitudRepository {
         'tea_referencial': model.teaReferencial,
         'estado': 'enviada',
         if (model.firmaSimulada) 'firma_cliente_base64': 'SIMULADA',
-        'lat_captura': _simulatedLat,
-        'lng_captura': _simulatedLng,
+        'lat_captura': latCaptura ?? _fallbackLat,
+        'lng_captura': lngCaptura ?? _fallbackLng,
         'pendiente_sync': false,
       };
 
