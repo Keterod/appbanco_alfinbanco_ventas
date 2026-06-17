@@ -27,6 +27,10 @@
 | 16 | Branding unificado | `app_strings.dart`, `app_colors.dart` | "Banco Alfin · App Fuerza de Ventas" |
 | 17 | **GPS real** — Ubicación real del oficial en cobranza, solicitud y ruta con fallback controlado | `location_service.dart`, `cobranza_accion_viewmodel.dart`, `solicitud_credito_viewmodel.dart`, `ruta_viewmodel.dart` | `geolocator` + `url_launcher` + permisos |
 | 18 | **Ruta sin mapa simulado** — Timeline vertical con paradas numeradas, coordenadas visibles, navegación externa Google Maps | `ruta_screen.dart` (`_RutaOrdenadaView`, `_ParadaTimeline`) | Vista operativa profesional sin API Key |
+| 19 | **Dashboard conectado a Supabase** — Visitas, solicitudes y actividad desde `ReportesRepository` + `EstadoSolicitudesRepository` | `home_oficial_viewmodel.dart` | Fallback mock si no hay datos |
+| 20 | **Estado Solicitudes desde Supabase** — Consulta `solicitudes_credito` + join `clientes` | `estado_solicitudes_repository.dart`, `estado_solicitudes_viewmodel.dart` | Fallback `RequestStatusMockData` |
+| 21 | **Detalle Solicitud desde Supabase** — Timeline generado del estado real | `estado_solicitudes_repository.dart`, `estado_solicitud_detalle_viewmodel.dart` | Fallback mock |
+| 22 | **Reportes desde Supabase** — Consulta `solicitudes_credito`, `cartera_diaria`, `acciones_cobranza` | `reportes_repository.dart`, `reportes_viewmodel.dart` | Fallback mock hardcoded |
 
 ---
 
@@ -36,9 +40,9 @@
 |---|-----------|----------|---------|
 | C1 | **Configuración segura de Supabase** — URL y anon key hardcodeadas en texto plano | `supabase_config.dart:2-5` | Riesgo de seguridad en producción |
 | C2 | **Sin sesión persistente** — No se configura `persistSession` en inicialización | `main.dart:13-23` | Usuario debe loguearse cada vez que abre la app |
-| C3 | **Dashboard sin datos reales** — Métricas hardcodeadas, no consulta Supabase | `home_oficial_viewmodel.dart:43-86` | Sin valor real para el oficial |
-| C4 | **Estado solicitudes desde mock** — No consulta `solicitudes_credito` en Supabase | `estado_solicitudes_viewmodel.dart`, `request_status_mock_data.dart` | El oficial no puede ver estado real de sus solicitudes |
-| C5 | **Reportes desde mock** — Indicadores no reflejan datos reales | `reportes_viewmodel.dart:81-137` | Reportes no útiles para gestión |
+| C3 | **Dashboard sin datos reales** — Métricas hardcodeadas, no consulta Supabase | ~~`home_oficial_viewmodel.dart`~~ | 🟡 **Parcial** — Ahora consulta `ReportesRepository` + `EstadoSolicitudesRepository` con fallback mock |
+| C4 | **Estado solicitudes desde mock** — No consulta `solicitudes_credito` en Supabase | ~~`estado_solicitudes_viewmodel.dart`~~ | 🟡 **Parcial** — Ahora consulta `EstadoSolicitudesRepository` (join `clientes`) con fallback mock |
+| C5 | **Reportes desde mock** — Indicadores no reflejan datos reales | ~~`reportes_viewmodel.dart`~~ | 🟡 **Parcial** — Ahora consulta `ReportesRepository` (3 tablas) con fallback mock |
 
 ---
 

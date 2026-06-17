@@ -1,10 +1,14 @@
 import 'package:flutter/foundation.dart';
 
+import '../../auth/data/asesor_repository.dart';
 import '../../home/presentation/home_oficial_viewmodel.dart';
+import '../data/reportes_repository.dart';
 import '../domain/report_model.dart';
 
 /// ViewModel del módulo Reportes del Oficial.
 class ReportesViewModel extends ChangeNotifier {
+  final ReportesRepository _repo = ReportesRepository.instance;
+
   static const String periodoHoy = 'Hoy';
   static const String periodoSemana = 'Semana';
   static const String periodoMes = 'Mes';
@@ -16,12 +20,14 @@ class ReportesViewModel extends ChangeNotifier {
   ];
 
   bool _isLoading = false;
+  bool _usandoDatosReales = false;
   String? _errorMessage;
   String _selectedPeriod = periodoHoy;
   OfficerReportModel? _report;
   List<ReportActivityItem> _activities = [];
 
   bool get isLoading => _isLoading;
+  bool get usandoDatosReales => _usandoDatosReales;
   String? get errorMessage => _errorMessage;
   String get selectedPeriod => _selectedPeriod;
   OfficerReportModel? get report => _report;
@@ -33,19 +39,77 @@ class ReportesViewModel extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    await Future<void>.delayed(const Duration(milliseconds: 400));
-
     try {
-      _report = _buildReportForPeriod(_selectedPeriod);
-      _activities = _buildActivitiesForPeriod(_selectedPeriod);
+      final real = await _tryLoadReal();
+      if (real != null) {
+        _report = real;
+        _usandoDatosReales = true;
+      } else {
+        _report = _buildReportForPeriod(_selectedPeriod);
+        _usandoDatosReales = false;
+      }
+
+      final realActivities = await _tryLoadActivities();
+      if (realActivities.isNotEmpty) {
+        _activities = realActivities;
+      } else {
+        _activities = _buildActivitiesForPeriod(_selectedPeriod);
+      }
     } catch (e) {
       _errorMessage = 'No se pudo cargar el reporte.';
-      _report = null;
-      _activities = [];
+      _report = _buildReportForPeriod(_selectedPeriod);
+      _activities = _buildActivitiesForPeriod(_selectedPeriod);
+      _usandoDatosReales = false;
     }
 
     _isLoading = false;
     notifyListeners();
+  }
+
+  Future<OfficerReportModel?> _tryLoadReal() async {
+    final now = DateTime.now();
+    final (inicio, fin) = _getPeriodRange(_selectedPeriod, now);
+
+    return _repo.loadReport(
+      asesorNombre: HomeOficialViewModel.officerName,
+      periodo: _selectedPeriod,
+      inicio: inicio,
+      fin: fin,
+    );
+  }
+
+  Future<List<ReportActivityItem>> _tryLoadActivities() async {
+    final now = DateTime.now();
+    final (inicio, fin) = _getPeriodRange(_selectedPeriod, now);
+
+    try {
+      final asesor =
+          await AsesorRepository.instance.requireCurrentAsesor();
+      return _repo.loadActivities(
+        asesorId: asesor.id,
+        inicio: inicio,
+        fin: fin,
+      );
+    } catch (_) {
+      return [];
+    }
+  }
+
+  (DateTime, DateTime) _getPeriodRange(String period, DateTime now) {
+    return switch (period) {
+      periodoSemana => (
+          now.subtract(const Duration(days: 7)),
+          now.add(const Duration(days: 1)),
+        ),
+      periodoMes => (
+          DateTime(now.year, now.month, 1),
+          now.add(const Duration(days: 1)),
+        ),
+      _ => (
+          DateTime(now.year, now.month, now.day),
+          now.add(const Duration(days: 1)),
+        ),
+    };
   }
 
   Future<void> changePeriod(String period) async {

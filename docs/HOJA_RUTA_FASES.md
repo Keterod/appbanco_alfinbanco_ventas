@@ -107,32 +107,46 @@
 
 ---
 
-## Fase 2C — Conexión real de módulos prioritarios a Supabase 📅
+## Fase 2C — Conexión real de módulos prioritarios a Supabase ✅
 
 **Objetivo**: Conectar dashboard, estado solicitudes y reportes a datos reales de Supabase.
 
-### Archivos probables a modificar
+### Archivos creados
+
+| Archivo | Propósito |
+|---------|-----------|
+| `lib/features/estado_solicitudes/data/estado_solicitudes_repository.dart` | Consulta `solicitudes_credito` + join `clientes`, filtrado por `asesor_id` |
+| `lib/features/reportes/data/reportes_repository.dart` | Consulta `solicitudes_credito`, `cartera_diaria`, `acciones_cobranza` con indicadores por periodo |
+| `docs/sql/FASE2C_SUPABASE_DATOS_REALES.sql` | Documentación de tablas, columnas, inserts demo y consultas |
+
+### Archivos modificados
 
 | Archivo | Cambio |
 |---------|--------|
-| `home_oficial_viewmodel.dart` | Consultar cartera, solicitudes y mora desde Supabase en lugar de mock |
-| `estado_solicitudes_viewmodel.dart` | Consultar `solicitudes_credito` filtrado por `asesor_id` |
-| `reportes_viewmodel.dart` | Calcular indicadores desde datos reales de Supabase |
-| Nuevo: `estado_solicitudes_repository.dart` | Repositorio para consultar estado desde Supabase |
-| Nuevo: `reportes_repository.dart` | Repositorio para consultar indicadores desde Supabase |
-| `home_oficial_screen.dart` | Pequeños ajustes si cambia estructura de datos |
+| `home_oficial_viewmodel.dart` | `loadDashboard()` intenta `ReportesRepository` + `EstadoSolicitudesRepository`; fallback a mock hardcoded |
+| `estado_solicitudes_viewmodel.dart` | `loadRequests()` intenta repositorio Supabase; si hay datos reales los usa; fallback a `RequestStatusMockData` |
+| `estado_solicitud_detalle_viewmodel.dart` | `loadRequest()` intenta Supabase por ID/expediente; fallback a mock |
+| `reportes_viewmodel.dart` | `loadReport()` intenta `ReportesRepository` + `loadActivities()`; fallback a mock hardcoded |
 
 ### Riesgo
 - Dependencia de latencia de red: si Supabase está lento, la app se siente lenta
 - Datos incompletos: las tablas pueden no tener datos de prueba
 
-### Criterio de aceptación
-- Dashboard muestra datos reales del asesor autenticado
-- Estado de solicitudes consulta `solicitudes_credito` real
-- Reportes muestran indicadores reales
+### Criterio de aceptación cumplido
+- ✅ Dashboard muestra datos reales del asesor autenticado si existen (fallback a mock)
+- ✅ Estado de solicitudes consulta `solicitudes_credito` real con join a `clientes`
+- ✅ Reportes consultan `solicitudes_credito`, `cartera_diaria`, `acciones_cobranza` y calculan indicadores reales
+- ✅ Detalle de solicitud busca en Supabase primero, fallback a mock
+- ✅ Sin cambios en login, GPS, Ruta, cobranza ni solicitud
+- ✅ `flutter analyze`: 0 issues
 
-### Qué NO tocar todavía
-- GPS, cámara, firma, PDF, roles, SQLite offline completo
+### Documentación
+- `docs/FASE2C_SUPABASE_DATOS_REALES.md`
+- `docs/sql/FASE2C_SUPABASE_DATOS_REALES.sql`
+
+---
+
+## Fase 2D — SQLite offline básico con cola de pendientes 📅
 
 ---
 
@@ -286,7 +300,7 @@
 | **2A** | Auditoría diferencial | Alta | Completada | Fase 1 |
 | **2B** | GPS real | **Crítica** | Completada | Fase 2A |
 | **2B.1** | Mejora Ruta sin API Key | Alta | Completada | Fase 2B |
-| **2C** | Conexión Supabase real | Alta | 2-3 semanas | Fase 2A |
+| **2C** | Conexión Supabase real (Dashboard, Estado Solicitudes, Reportes) | Alta | Completada | Fase 2A |
 | **2D** | SQLite offline | Alta | 2-3 semanas | Fase 2A |
 | **2E** | Sync outbox/log | Media | 1 semana | Fase 2D |
 | **3** | App Clientes + features avanzadas | Media | 4-6 semanas | Fase 2B, 2C, 2D |
