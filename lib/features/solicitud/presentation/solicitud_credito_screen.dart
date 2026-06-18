@@ -606,6 +606,8 @@ class _PasoCredito extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         _CronogramaCard(vm: vm, currencyFormat: currencyFormat),
+        const SizedBox(height: 12),
+        _PreEvaluacionCard(vm: vm, currencyFormat: currencyFormat),
       ],
     );
   }
@@ -666,7 +668,7 @@ class _CronogramaCard extends StatelessWidget {
                     ),
               ),
               const SizedBox(height: 12),
-              ..._buildCronogramaList(context, cronograma),
+              ..._buildCronogramaList(context, cronograma, currencyFormat),
               const SizedBox(height: 4),
               _CronoTotalRow(
                 label: 'Total a pagar',
@@ -682,43 +684,272 @@ class _CronogramaCard extends StatelessWidget {
       ),
     );
   }
+}
 
-  List<Widget> _buildCronogramaList(
-      BuildContext context, List<CronogramaRow> rows) {
-    const int initialDisplay = 6;
-    final showAll = rows.length <= initialDisplay || _showAll;
-    final displayRows = showAll ? rows : rows.take(initialDisplay).toList();
+class _PreEvaluacionCard extends StatelessWidget {
+  const _PreEvaluacionCard({required this.vm, required this.currencyFormat});
 
-    return [
-      ...displayRows.map((row) => _CronoRowCard(
-            row: row,
-            currencyFormat: currencyFormat,
-          )),
-      if (!showAll) ...[
-        const SizedBox(height: 4),
-        Center(
-          child: TextButton.icon(
-            onPressed: () => _showAll = true,
-            icon: const Icon(Icons.expand_more, size: 18),
-            label: Text('Ver más (${rows.length - initialDisplay} restantes)'),
+  final SolicitudCreditoViewModel vm;
+  final NumberFormat currencyFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    final eval = vm.preEvaluacion;
+    final ingresos = vm.ingresosMensuales;
+    final monto = vm.montoSolicitado;
+    final plazo = vm.plazoMeses;
+
+    final datosCompletos =
+        ingresos > 0 && monto > 0 && plazo > 0;
+
+    if (!datosCompletos) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, color: AppColors.textSecondary, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Completa ingresos, gastos, monto y plazo para calcular la pre-evaluación.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                ),
+              ),
+            ],
           ),
         ),
-      ],
-      if (showAll && rows.length > initialDisplay) ...[
-        const SizedBox(height: 4),
-        Center(
-          child: TextButton.icon(
-            onPressed: () => _showAll = false,
-            icon: const Icon(Icons.expand_less, size: 18),
-            label: const Text('Mostrar menos'),
-          ),
+      );
+    }
+
+    if (eval == null) return const SizedBox.shrink();
+
+    final elegibilidad = eval.elegibilidad;
+    final color = elegibilidad.color;
+    final icon = elegibilidad.icon;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.assignment_outlined,
+                    color: AppColors.secondary, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Pre-evaluación crediticia',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: color.withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                children: [
+                  Icon(icon, color: color, size: 32),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        elegibilidad.label,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: color,
+                            ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        eval.mensaje,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: color,
+                            ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '${eval.score} pts',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: color,
+                            ),
+                      ),
+                      Text(
+                        'Riesgo ${eval.riesgo.label}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: color,
+                            ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _EvalChip(
+                  label: 'Capacidad disponible',
+                  value: currencyFormat.format(eval.capacidadDisponible),
+                ),
+                const SizedBox(width: 12),
+                _EvalChip(
+                  label: 'Ratio capacidad de pago',
+                  value: '${(eval.ratioCapacidadPago * 100).toStringAsFixed(1)}%',
+                ),
+              ],
+            ),
+            if (eval.motivos.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              ...eval.motivos.map(
+                (m) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.fiber_manual_record,
+                          size: 8, color: AppColors.textSecondary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          m,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            if (eval.esNoApto) ...[
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.gestionRecuperacionMora.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline,
+                        size: 16,
+                        color: AppColors.gestionRecuperacionMora),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'El oficial puede revisar la información antes de continuar.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.gestionRecuperacionMora,
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
         ),
-      ],
-    ];
+      ),
+    );
+  }
+}
+
+class _EvalChip extends StatelessWidget {
+  const _EvalChip({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    fontSize: 11,
+                  ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
 bool _showAll = false;
+
+List<Widget> _buildCronogramaList(
+    BuildContext context, List<CronogramaRow> rows, NumberFormat currencyFormat) {
+  const int initialDisplay = 6;
+  final showAll = rows.length <= initialDisplay || _showAll;
+  final displayRows = showAll ? rows : rows.take(initialDisplay).toList();
+
+  return [
+    ...displayRows.map((row) => _CronoRowCard(
+          row: row,
+          currencyFormat: currencyFormat,
+        )),
+    if (!showAll) ...[
+      const SizedBox(height: 4),
+      Center(
+        child: TextButton.icon(
+          onPressed: () => _showAll = true,
+          icon: const Icon(Icons.expand_more, size: 18),
+          label: Text('Ver más (${rows.length - initialDisplay} restantes)'),
+        ),
+      ),
+    ],
+    if (showAll && rows.length > initialDisplay) ...[
+      const SizedBox(height: 4),
+      Center(
+        child: TextButton.icon(
+          onPressed: () => _showAll = false,
+          icon: const Icon(Icons.expand_less, size: 18),
+          label: const Text('Mostrar menos'),
+        ),
+      ),
+    ],
+  ];
+}
 
 class _CronoRowCard extends StatelessWidget {
   const _CronoRowCard({required this.row, required this.currencyFormat});

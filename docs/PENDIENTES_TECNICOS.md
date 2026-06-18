@@ -1,6 +1,6 @@
 # Pendientes técnicos — App Fuerza de Ventas
 
-> Actualizado durante Fase 3A.1 — Cronograma de cuotas.
+> Actualizado durante Fase 3A.2 — Pre-evaluación simple.
 > Clasificación: ✅ Ya implementado | 🔴 Crítico | 🟡 Importante | ⏸️ Después | 🟢 Opcional
 
 ---
@@ -48,6 +48,7 @@
 | 37 | **Cache local del asesor** — Datos mínimos en SQLite (`asesor_cache`) | `session_local_datasource.dart`, `asesor_repository.dart` | Fallback offline en `loadCurrentAsesor()` |
 | 38 | **SplashScreen** — Pantalla de carga que restaura sesión y asesor | `splash_screen.dart`, `app_navigation.dart` | Verifica sesión → carga asesor → navega a Home/Login |
 | 39 | **Cronograma de cuotas (cálculo + UI)** — Tabla de amortización mes a mes con sistema francés | `cronograma_row.dart`, `solicitud_credito_viewmodel.dart`, `solicitud_credito_screen.dart` | Cálculo en memoria, no persiste en Supabase (pendiente 3A.3). Solo cuota fija. |
+| 40 | **Pre-evaluación simple (cálculo + UI)** — Score, elegibilidad (APTO/OBSERVADO/NO APTO), ratio de capacidad de pago, riesgo, motivos | `pre_evaluacion_result.dart`, `solicitud_credito_viewmodel.dart`, `solicitud_credito_screen.dart` | Evaluación en memoria basada en ingresos/gastos/cuota. No persiste en Supabase ni integra buró automáticamente (pendiente 3A.3). |
 
 ---
 
@@ -84,7 +85,7 @@
 | D3 | **PDF real** — Exportación de reportes y fichas | `pdf`, `printing` |
 | D4 | **Notificaciones push** — Cambio de estado de solicitud | `firebase_messaging`, `flutter_local_notifications` |
 | D5 | **Cronograma de cuotas** ~~— Desglose mes a mes en simulación~~ | ~~—~~ | 🟡 **Fase 3A.1** — Implementado en UI y cálculo (sistema francés, solo cuota fija). Falta persistencia en Supabase (3A.3). |
-| D6 | **Pre-evaluación de cliente** — Puntuación y reglas de negocio | — |
+| D6 | **Pre-evaluación de cliente** — Puntuación y reglas de negocio | 🟡 **Fase 3A.2** — Implementado en UI y cálculo (score, elegibilidad, ratio, riesgo, motivos). Falta persistencia en Supabase e integración automática con buró (3A.3). |
 | D7 | **Bloqueo por intentos fallidos** — Protección contra fuerza bruta | — |
 | D8 | **Integración buró real (SBS/Equifax)** — Reemplazar datos mock | — |
 

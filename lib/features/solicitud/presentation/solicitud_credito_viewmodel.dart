@@ -8,9 +8,11 @@ import '../../../core/supabase/supabase_helper.dart';
 import '../../../core/sync/sync_manager.dart';
 import '../../../core/sync/sync_models.dart';
 import '../../auth/data/asesor_repository.dart';
+import '../../buro/domain/buro_result_model.dart';
 import '../data/solicitud_repository.dart';
 import '../domain/credit_request_model.dart';
 import '../domain/cronograma_row.dart';
+import '../domain/pre_evaluacion_result.dart';
 
 /// ViewModel del wizard de solicitud de crédito (HU-V04).
 class SolicitudCreditoViewModel extends ChangeNotifier {
@@ -64,11 +66,20 @@ class SolicitudCreditoViewModel extends ChangeNotifier {
   String? _numeroExpediente;
   List<CronogramaRow> _cronograma = [];
   bool _cronogramaVisible = false;
+  PreEvaluacionResult? _preEvaluacion;
+  BuroStatus? _buroStatus;
 
   int get pasoActual => _pasoActual;
   bool get isLoading => _isLoading;
   List<CronogramaRow> get cronograma => _cronograma;
   bool get cronogramaVisible => _cronogramaVisible;
+  PreEvaluacionResult? get preEvaluacion => _preEvaluacion;
+  BuroStatus? get buroStatus => _buroStatus;
+
+  void setBuroStatus(BuroStatus? status) {
+    _buroStatus = status;
+    evaluarCliente();
+  }
 
   void toggleCronograma() {
     _cronogramaVisible = !_cronogramaVisible;
@@ -249,11 +260,13 @@ class SolicitudCreditoViewModel extends ChangeNotifier {
 
   void setIngresosMensuales(double v) {
     _ingresosMensuales = v;
+    evaluarCliente();
     notifyListeners();
   }
 
   void setGastosMensuales(double v) {
     _gastosMensuales = v;
+    evaluarCliente();
     notifyListeners();
   }
 
@@ -333,6 +346,7 @@ class SolicitudCreditoViewModel extends ChangeNotifier {
 
     _cuotaEstimada = monto * tasaMensual / factor;
     generarCronograma();
+    evaluarCliente();
   }
 
   void generarCronograma() {
@@ -387,6 +401,103 @@ class SolicitudCreditoViewModel extends ChangeNotifier {
   }
 
   static double _r2(double v) => (v * 100).roundToDouble() / 100;
+
+  void evaluarCliente() {
+    final ingresos = _ingresosMensuales;
+    final gastos = _gastosMensuales;
+    final cuota = _cuotaEstimada;
+
+    debugPrint(
+        '[PRE-EVAL] evaluando ingresos=$ingresos gastos=$gastos cuota=$cuota');
+
+    if (ingresos <= 0) {
+      _preEvaluacion = PreEvaluacionResult(
+        score: 20,
+        elegibilidad: Elegibilidad.noApto,
+        ratioCapacidadPago: 0,
+        capacidadDisponible: 0,
+        riesgo: RiesgoCrediticio.alto,
+        mensaje: 'Ingresos mensuales no válidos',
+        motivos: ['Ingresos mensuales no válidos'],
+      );
+      debugPrint(
+          '[PRE-EVAL] resultado=NO APTO score=${_preEvaluacion!.score} ratio=0');
+      return;
+    }
+
+    final disponible = ingresos - gastos;
+    if (disponible <= 0) {
+      _preEvaluacion = PreEvaluacionResult(
+        score: 30,
+        elegibilidad: Elegibilidad.noApto,
+        ratioCapacidadPago: 0,
+        capacidadDisponible: disponible < 0 ? disponible : 0,
+        riesgo: RiesgoCrediticio.alto,
+        mensaje: 'Los gastos igualan o superan los ingresos',
+        motivos: ['Los gastos igualan o superan los ingresos'],
+      );
+      debugPrint(
+          '[PRE-EVAL] resultado=NO APTO score=${_preEvaluacion!.score} ratio=0');
+      return;
+    }
+
+    final ratio = (cuota / disponible).clamp(0, 10).toDouble();
+    var score = 100;
+    Elegibilidad elegibilidad;
+    RiesgoCrediticio riesgo;
+    String mensaje;
+    final motivos = <String>[];
+
+    if (ratio <= 0.40) {
+      elegibilidad = Elegibilidad.apto;
+      riesgo = RiesgoCrediticio.bajo;
+      mensaje = 'La cuota se encuentra dentro de la capacidad de pago';
+      score -= 0;
+    } else if (ratio <= 0.60) {
+      elegibilidad = Elegibilidad.observado;
+      riesgo = RiesgoCrediticio.medio;
+      mensaje =
+          'La cuota compromete una parte importante de la capacidad de pago';
+      score -= 25;
+      motivos.add(mensaje);
+    } else {
+      elegibilidad = Elegibilidad.noApto;
+      riesgo = RiesgoCrediticio.alto;
+      mensaje = 'La cuota supera la capacidad de pago recomendada';
+      score -= 50;
+      motivos.add(mensaje);
+    }
+
+    if (_buroStatus == BuroStatus.revisar) {
+      if (elegibilidad == Elegibilidad.apto) {
+        elegibilidad = Elegibilidad.observado;
+        mensaje = 'Aprobado por capacidad, pero buró requiere revisión';
+      }
+      score -= 20;
+      motivos.add('Buró del cliente requiere revisión');
+    } else if (_buroStatus == BuroStatus.bloqueado) {
+      elegibilidad = Elegibilidad.noApto;
+      riesgo = RiesgoCrediticio.alto;
+      mensaje = 'Cliente bloqueado por buró';
+      score = 20;
+      motivos.add('Cliente bloqueado por buró');
+    }
+
+    score = score.clamp(0, 100);
+
+    _preEvaluacion = PreEvaluacionResult(
+      score: score,
+      elegibilidad: elegibilidad,
+      ratioCapacidadPago: _r2(ratio),
+      capacidadDisponible: _r2(disponible),
+      riesgo: riesgo,
+      mensaje: mensaje,
+      motivos: motivos,
+    );
+
+    debugPrint(
+        '[PRE-EVAL] resultado=${elegibilidad.label} score=$score ratio=$ratio');
+  }
 
   bool validateCurrentStep() {
     clearMessages();

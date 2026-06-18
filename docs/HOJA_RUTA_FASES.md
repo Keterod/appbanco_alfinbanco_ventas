@@ -313,23 +313,70 @@
 
 ---
 
-## Fase 3A.2 — Pre-evaluación simple + 3A.3 Persistencia 📅
+## Fase 3A.2 — Pre-evaluación simple ✅
 
-**Objetivo**: Agregar pre-evaluación (score/elegibilidad) y persistir cronograma en Supabase.
+**Objetivo**: Agregar pre-evaluación crediticia simple con score, elegibilidad (APTO/OBSERVADO/NO APTO), ratio de capacidad de pago, riesgo y motivos. Evaluación en memoria usando ingresos, gastos, monto, plazo y cuota estimada.
 
-### Archivos probables a modificar/crear (3A.2)
-- `lib/features/solicitud/domain/pre_evaluacion_result.dart` (crear)
-- `solicitud_credito_viewmodel.dart` (agregar `evaluarCliente()`)
-- `solicitud_credito_screen.dart` (agregar semáforo de elegibilidad)
+### Archivos creados
 
-### Archivos probables a modificar (3A.3)
+| Archivo | Propósito |
+|---------|-----------|
+| `lib/features/solicitud/domain/pre_evaluacion_result.dart` | Modelo `PreEvaluacionResult` con enums `Elegibilidad` y `RiesgoCrediticio`, score, ratio, capacidad disponible, mensaje, motivos, `toMap()`/`toJson()`. |
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `lib/features/solicitud/presentation/solicitud_credito_viewmodel.dart` | `evaluarCliente()`, `_preEvaluacion`/getter, `_buroStatus`/`setBuroStatus()`, logs `[PRE-EVAL]`. Se llama automáticamente desde `calculateInstallment()`, `setIngresosMensuales()`, `setGastosMensuales()`. |
+| `lib/features/solicitud/presentation/solicitud_credito_screen.dart` | Sección `_PreEvaluacionCard` en Step 3 con semáforo visual (verde/naranja/rojo), score, ratio, motivos. Widget `_EvalChip`. |
+
+### Reglas de evaluación
+
+```
+capacidadDisponible = ingresos - gastos
+ratioCapacidadPago = cuota / capacidadDisponible
+```
+
+| ratio | Resultado | Score |
+|---|---|---|
+| <= 0.40 | APTO | 100 |
+| 0.41 - 0.60 | OBSERVADO | 75 |
+| > 0.60 | NO APTO | 50 |
+| capacidad <= 0 | NO APTO | 30 |
+| ingresos <= 0 | NO APTO | 20 |
+
+Penalizaciones: buró revisar -20pts (mín. OBSERVADO), buró bloqueado score máx. 20.
+
+### Riesgo
+- La pre-evaluación sin buró real es asistida, no determinista.
+- No persiste en Supabase (pendiente 3A.3).
+- No integración automática con buró (pendiente 3A.3).
+
+### Criterio de aceptación cumplido
+- ✅ Score calculado con ratio capacidad de pago.
+- ✅ Resultado APTO/OBSERVADO/NO APTO con semáforo visual.
+- ✅ Motivos claros al oficial.
+- ✅ Se recalcula automáticamente al cambiar ingresos, gastos, monto o plazo.
+- ✅ Envío de solicitud sin cambios (no bloqueado).
+- ✅ `flutter analyze`: 0 issues.
+- ✅ `flutter build apk --debug`: exitoso.
+
+### Documentación
+- `docs/FASE3A2_PRE_EVALUACION_SIMPLE.md`
+
+---
+
+## Fase 3A.3 — Persistencia Supabase + sync 📅
+
+**Objetivo**: Persistir cronograma (JSONB), score y elegibilidad en Supabase; incluir en sync offline.
+
+### Archivos probables a modificar
 - `solicitud_repository.dart` (agregar `cronograma_json`, `score_pre_evaluacion`, `elegibilidad` al payload)
-- `sync_manager.dart` (incluir cronograma en sync offline)
+- `sync_manager.dart` (incluir cronograma y pre-evaluación en sync offline)
 - `docs/sql/FASE2C_SUPABASE_DATOS_REALES.sql` (nuevas columnas)
 
 ### Riesgo
-- La pre-evaluación sin buró real será asistida, no determinista.
-- La persistencia requiere migración de esquema Supabase.
+- Requiere migración de esquema Supabase.
 
 ---
 
@@ -399,7 +446,7 @@
 | **2E** | Sync outbox/log | Media | Completada | Fase 2D |
 | **2F** | Sesión persistente | **Crítica** | Completada | Fase 2E |
 | **3A.1** | Cronograma de cuotas | Alta | Completada | Fase 2C, 2F |
-| **3A.2** | Pre-evaluación simple | Alta | Pendiente | Fase 3A.1 |
+| **3A.2** | Pre-evaluación simple | Alta | Completada | Fase 3A.1 |
 | **3A.3** | Persistencia Supabase + sync | Media | Pendiente | Fase 3A.1 |
 | **3B** | App Clientes, roles, cámara, firma, PDF | Media | 4-6 semanas | Fase 3A |
 | **4** | Core Mobile FastAPI | Media | 6-8 semanas | Fase 3 |
