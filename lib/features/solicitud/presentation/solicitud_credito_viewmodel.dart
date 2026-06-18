@@ -10,6 +10,7 @@ import '../../../core/sync/sync_models.dart';
 import '../../auth/data/asesor_repository.dart';
 import '../data/solicitud_repository.dart';
 import '../domain/credit_request_model.dart';
+import '../domain/cronograma_row.dart';
 
 /// ViewModel del wizard de solicitud de crédito (HU-V04).
 class SolicitudCreditoViewModel extends ChangeNotifier {
@@ -61,9 +62,18 @@ class SolicitudCreditoViewModel extends ChangeNotifier {
   bool _firmaSimulada = false;
   EstadoSolicitud _estadoSolicitud = EstadoSolicitud.borrador;
   String? _numeroExpediente;
+  List<CronogramaRow> _cronograma = [];
+  bool _cronogramaVisible = false;
 
   int get pasoActual => _pasoActual;
   bool get isLoading => _isLoading;
+  List<CronogramaRow> get cronograma => _cronograma;
+  bool get cronogramaVisible => _cronogramaVisible;
+
+  void toggleCronograma() {
+    _cronogramaVisible = !_cronogramaVisible;
+    notifyListeners();
+  }
 
   Future<void> captureLocation() async {
     if (_latCaptura != null) return;
@@ -322,7 +332,61 @@ class SolicitudCreditoViewModel extends ChangeNotifier {
     }
 
     _cuotaEstimada = monto * tasaMensual / factor;
+    generarCronograma();
   }
+
+  void generarCronograma() {
+    final monto = _montoSolicitado;
+    final plazo = _plazoMeses;
+    final tea = _teaReferencial;
+
+    if (monto <= 0 || plazo <= 0 || tea <= 0) {
+      _cronograma = [];
+      return;
+    }
+
+    debugPrint('[CRONOGRAMA] generando monto=$monto plazo=$plazo tea=$tea');
+
+    final tem = (math.pow(1 + tea, 1 / 12) - 1).toDouble();
+    final cuota = _cuotaEstimada;
+    final fechaInicio = DateTime.now();
+    final rows = <CronogramaRow>[];
+    var saldo = monto;
+
+    for (var i = 1; i <= plazo; i++) {
+      final interes = saldo * tem;
+      var capital = cuota - interes;
+      if (capital < 0) capital = 0;
+      saldo -= capital;
+      if (saldo < 0) saldo = 0;
+
+      // Ajuste última cuota: capital + saldo residual
+      if (i == plazo && saldo > 0) {
+        capital += saldo;
+        saldo = 0;
+      }
+
+      rows.add(CronogramaRow(
+        numeroCuota: i,
+        fechaPago: _sumarMeses(fechaInicio, i),
+        capital: _r2(capital),
+        interes: _r2(interes),
+        cuota: _r2(capital + interes),
+        saldo: _r2(saldo),
+      ));
+    }
+
+    _cronograma = rows;
+    debugPrint(
+        '[CRONOGRAMA] cuotas generadas=${rows.length} saldoFinal=${rows.last.saldo}');
+  }
+
+  static DateTime _sumarMeses(DateTime from, int meses) {
+    final dia = from.day.clamp(1, 28);
+    return DateTime(from.year, from.month + meses, dia);
+  }
+
+  static double _r2(double v) => (v * 100).roundToDouble() / 100;
 
   bool validateCurrentStep() {
     clearMessages();

@@ -276,36 +276,60 @@
 
 ---
 
-## Fase 3 — App Clientes, roles, cámara, firma, PDF, cronograma, pre-evaluación 📅
+## Fase 3A.1 — Cronograma de cuotas ✅
 
-**Objetivo**: Agregar funcionalidades avanzadas y preparar integración con App Clientes.
+**Objetivo**: Implementar el desglose mes a mes del cronograma de pagos con sistema francés (cuota fija).
 
-### Archivos probables a modificar
+### Archivos creados
 
-| Módulo | Cambio |
-|--------|--------|
-| Roles | Agregar campo `rol` a `AsesorModel`, implementar `RoleBasedAccess` |
-| Cámara | Reemplazar `_simulateCapture()` con `camera`/`image_picker` + Supabase Storage |
-| Firma | Reemplazar `registrarFirmaSimulada()` con `signature` widget |
-| PDF | Implementar exportación con `pdf` + `printing` |
-| Cronograma | Generar tabla de amortización con cuota, interés, saldo |
-| Pre-evaluación | Módulo con puntuación basada en buró + historial + SBS |
-| App Clientes | Definir contratos API, tabla `clientes_app` compartida |
+| Archivo | Propósito |
+|---------|-----------|
+| `lib/features/solicitud/domain/cronograma_row.dart` | Modelo `CronogramaRow` con `toMap()`/`fromMap()`/`toJson()` |
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `lib/features/solicitud/presentation/solicitud_credito_viewmodel.dart` | `generarCronograma()`, `_cronograma`, getter, logs, helper `_sumarMeses()`. Se llama desde `calculateInstallment()`. |
+| `lib/features/solicitud/presentation/solicitud_credito_screen.dart` | Dropdown TipoCuota limitado a solo `fija`. Sección `_CronogramaCard` expandible en Step 3 con tarjetas por cuota + "Ver más". |
 
 ### Riesgo
-- Scope grande: muchas funcionalidades en una sola fase
-- Dependencia del diseño de App Clientes (puede requerir cambios posteriores)
+- Solo cuota fija (sistema francés). `decreciente` y `balloon` no implementados.
+- No persiste en Supabase (pendiente para 3A.3).
+- TEA hardcodeada 36% (no se lee de `creditos_preaprobados`).
 
-### Criterio de aceptación
-- Roles funcionales: menú cambia según rol
-- Cámara captura y sube documentos reales
-- Firma digital se captura con widget táctil
-- PDF se genera y puede compartirse
-- Cronograma muestra desglose completo
-- Pre-evaluación clasifica clientes viables
+### Criterio de aceptación cumplido
+- ✅ Cronograma generado mes a mes con capital, interés, cuota, saldo.
+- ✅ Interés decreciente, capital creciente.
+- ✅ Saldo final en 0.00 (ajuste última cuota).
+- ✅ Se recalcula al cambiar monto o plazo.
+- ✅ UI expandible con primeras 6 cuotas + "Ver más".
+- ✅ Envío de solicitud sin cambios.
+- ✅ `flutter analyze`: 0 issues.
+- ✅ `flutter build apk --debug`: exitoso.
 
-### Qué NO tocar todavía
-- Core Mobile, notificaciones push, buró real
+### Documentación
+- `docs/FASE3A1_CRONOGRAMA_CUOTAS.md`
+
+---
+
+## Fase 3A.2 — Pre-evaluación simple + 3A.3 Persistencia 📅
+
+**Objetivo**: Agregar pre-evaluación (score/elegibilidad) y persistir cronograma en Supabase.
+
+### Archivos probables a modificar/crear (3A.2)
+- `lib/features/solicitud/domain/pre_evaluacion_result.dart` (crear)
+- `solicitud_credito_viewmodel.dart` (agregar `evaluarCliente()`)
+- `solicitud_credito_screen.dart` (agregar semáforo de elegibilidad)
+
+### Archivos probables a modificar (3A.3)
+- `solicitud_repository.dart` (agregar `cronograma_json`, `score_pre_evaluacion`, `elegibilidad` al payload)
+- `sync_manager.dart` (incluir cronograma en sync offline)
+- `docs/sql/FASE2C_SUPABASE_DATOS_REALES.sql` (nuevas columnas)
+
+### Riesgo
+- La pre-evaluación sin buró real será asistida, no determinista.
+- La persistencia requiere migración de esquema Supabase.
 
 ---
 
@@ -374,6 +398,9 @@
 | **2D** | SQLite offline | Alta | Completada | Fase 2A |
 | **2E** | Sync outbox/log | Media | Completada | Fase 2D |
 | **2F** | Sesión persistente | **Crítica** | Completada | Fase 2E |
-| **3** | App Clientes + features avanzadas | Media | 4-6 semanas | Fase 2B, 2C, 2D |
+| **3A.1** | Cronograma de cuotas | Alta | Completada | Fase 2C, 2F |
+| **3A.2** | Pre-evaluación simple | Alta | Pendiente | Fase 3A.1 |
+| **3A.3** | Persistencia Supabase + sync | Media | Pendiente | Fase 3A.1 |
+| **3B** | App Clientes, roles, cámara, firma, PDF | Media | 4-6 semanas | Fase 3A |
 | **4** | Core Mobile FastAPI | Media | 6-8 semanas | Fase 3 |
 | **5** | Flujo end-to-end | Baja | 4-6 semanas | Fase 4 |

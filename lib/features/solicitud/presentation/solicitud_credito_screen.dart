@@ -6,6 +6,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../shared/widgets/oficial_drawer.dart';
 import '../domain/credit_request_model.dart';
+import '../domain/cronograma_row.dart';
 import 'solicitud_credito_viewmodel.dart';
 
 /// Wizard de nueva solicitud de crédito (HU-V04).
@@ -538,12 +539,14 @@ class _PasoCredito extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<TipoCuota>(
-                initialValue: vm.tipoCuota,
+                initialValue: vm.tipoCuota ?? TipoCuota.fija,
                 decoration: const InputDecoration(labelText: 'Tipo de cuota *'),
-                items: TipoCuota.values
-                    .map((e) =>
-                        DropdownMenuItem(value: e, child: Text(e.label)))
-                    .toList(),
+                items: [
+                  DropdownMenuItem(
+                    value: TipoCuota.fija,
+                    child: Text(TipoCuota.fija.label),
+                  ),
+                ],
                 onChanged: vm.setTipoCuota,
               ),
               const SizedBox(height: 12),
@@ -601,7 +604,239 @@ class _PasoCredito extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(height: 12),
+        _CronogramaCard(vm: vm, currencyFormat: currencyFormat),
       ],
+    );
+  }
+}
+
+class _CronogramaCard extends StatelessWidget {
+  const _CronogramaCard({required this.vm, required this.currencyFormat});
+
+  final SolicitudCreditoViewModel vm;
+  final NumberFormat currencyFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    final cronograma = vm.cronograma;
+    if (cronograma.isEmpty) return const SizedBox.shrink();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            InkWell(
+              onTap: vm.toggleCronograma,
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.calendar_month_outlined,
+                    color: AppColors.secondary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    vm.cronogramaVisible
+                        ? 'Ocultar cronograma de cuotas'
+                        : 'Ver cronograma de cuotas',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: AppColors.secondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    vm.cronogramaVisible
+                        ? Icons.expand_less
+                        : Icons.expand_more,
+                    color: AppColors.secondary,
+                  ),
+                ],
+              ),
+            ),
+            if (vm.cronogramaVisible) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Cronograma referencial calculado con cuota fija y TEA referencial.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+              ),
+              const SizedBox(height: 12),
+              ..._buildCronogramaList(context, cronograma),
+              const SizedBox(height: 4),
+              _CronoTotalRow(
+                label: 'Total a pagar',
+                value: currencyFormat.format(vm.totalAPagar),
+              ),
+              _CronoTotalRow(
+                label: 'Costo financiero',
+                value: currencyFormat.format(vm.costoFinanciero),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildCronogramaList(
+      BuildContext context, List<CronogramaRow> rows) {
+    const int initialDisplay = 6;
+    final showAll = rows.length <= initialDisplay || _showAll;
+    final displayRows = showAll ? rows : rows.take(initialDisplay).toList();
+
+    return [
+      ...displayRows.map((row) => _CronoRowCard(
+            row: row,
+            currencyFormat: currencyFormat,
+          )),
+      if (!showAll) ...[
+        const SizedBox(height: 4),
+        Center(
+          child: TextButton.icon(
+            onPressed: () => _showAll = true,
+            icon: const Icon(Icons.expand_more, size: 18),
+            label: Text('Ver más (${rows.length - initialDisplay} restantes)'),
+          ),
+        ),
+      ],
+      if (showAll && rows.length > initialDisplay) ...[
+        const SizedBox(height: 4),
+        Center(
+          child: TextButton.icon(
+            onPressed: () => _showAll = false,
+            icon: const Icon(Icons.expand_less, size: 18),
+            label: const Text('Mostrar menos'),
+          ),
+        ),
+      ],
+    ];
+  }
+}
+
+bool _showAll = false;
+
+class _CronoRowCard extends StatelessWidget {
+  const _CronoRowCard({required this.row, required this.currencyFormat});
+
+  final CronogramaRow row;
+  final NumberFormat currencyFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    final fecha = DateFormat('dd/MM/yyyy').format(row.fechaPago);
+    return Card(
+      margin: const EdgeInsets.only(bottom: 6),
+      elevation: 0,
+      color: AppColors.lightBackground,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'Cuota ${row.numeroCuota}',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  fecha,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                _CronoField(label: 'Capital', value: currencyFormat.format(row.capital)),
+                const SizedBox(width: 12),
+                _CronoField(label: 'Interés', value: currencyFormat.format(row.interes)),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                _CronoField(label: 'Cuota', value: currencyFormat.format(row.cuota)),
+                const SizedBox(width: 12),
+                _CronoField(label: 'Saldo', value: currencyFormat.format(row.saldo)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CronoField extends StatelessWidget {
+  const _CronoField({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Row(
+        children: [
+          Text(
+            '$label: ',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+          ),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CronoTotalRow extends StatelessWidget {
+  const _CronoTotalRow({required this.label, required this.value});
+
+  final String label;
+
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.secondary,
+                ),
+          ),
+        ],
+      ),
     );
   }
 }
