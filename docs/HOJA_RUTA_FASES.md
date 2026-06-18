@@ -189,31 +189,56 @@
 
 ---
 
-## Fase 2E — Preparación de tablas sync_outbox/sync_log para integración futura 📅
+## Fase 2E — Cola de sincronización offline (sync_outbox / sync_log) ✅
 
-**Objetivo**: Crear infraestructura de sincronización para App Clientes y Core Mobile.
+**Objetivo**: Infraestructura base de sincronización offline→remoto con cola local, reintentos y log. Preparación para FastAPI/Core Mobile.
 
-### Archivos a crear/modificar
+### Archivos creados
+
+| Archivo | Propósito |
+|---------|-----------|
+| `lib/core/sync/sync_models.dart` | Modelos `SyncOutboxEntry`, `SyncLogEntry` con `toMap()`/`fromMap()`, constantes |
+| `lib/core/sync/sync_local_datasource.dart` | CRUD SQLite sobre `sync_outbox` y `sync_log` |
+| `lib/core/sync/sync_manager.dart` | Gestor de cola: `enqueueOperation()`, `processPending()`, `pendingCount()`, reintentos |
+
+### Archivos modificados
 
 | Archivo | Cambio |
 |---------|--------|
-| `local_db.dart` | Agregar tablas `sync_outbox`, `sync_log` |
-| Nuevo: `core/sync/sync_manager.dart` | Gestor de cola: encolar, procesar, reintentar |
-| Nuevo: `core/sync/sync_models.dart` | Modelos `SyncOutboxEntry`, `SyncLogEntry` |
-| `main.dart` | Inicializar `SyncManager` al arrancar |
+| `lib/core/storage/local_db.dart` | DB version 1→2, `_createSyncTables()`, `onUpgrade` seguro |
+| `lib/main.dart` | `SyncManager.instance.processPending()` al arrancar |
+| `lib/features/home/presentation/home_oficial_viewmodel.dart` | `processPending()` en `loadDashboard()` |
+| `lib/shared/widgets/oficial_drawer.dart` | `_SyncPendingTile` con contador de pendientes en drawer |
+| `lib/features/ruta/presentation/ruta_viewmodel.dart` | Encolar `update_estado_visita` en `markAsVisited()` |
+| `lib/features/cobranza/presentation/cobranza_accion_viewmodel.dart` | Encolar `accion_cobranza insert` si falla Supabase |
+| `lib/features/solicitud/presentation/solicitud_credito_viewmodel.dart` | Encolar `solicitud_credito insert` si falla Supabase |
 
 ### Riesgo
-- Conflictos de sincronización si el oficial modifica datos offline mientras otro usuario los modificó online
-- Orden de operaciones: las operaciones deben aplicarse en orden correcto
+- Conflictos de sincronización si datos offline y online divergen (pendiente para Fase 3)
+- Orden de operaciones: se procesa en orden FIFO por `created_at ASC`
 
-### Criterio de aceptación
-- Las operaciones offline se guardan en `sync_outbox`
-- Al volver online, la cola se procesa automáticamente
-- Los errores de sync se registran en `sync_log`
-- No hay pérdida de datos por conflictos no resueltos
+### Criterio de aceptación cumplido
+- ✅ Tablas `sync_outbox` y `sync_log` creadas con migración segura v1→v2
+- ✅ `SyncOutboxEntry` y `SyncLogEntry` modelos con estados y operaciones tipadas
+- ✅ `SyncLocalDataSource` con CRUD completo: enqueue, getPending, markProcessing/Synced/Failed, writeLog
+- ✅ `SyncManager` con enqueue, processPending, pendingCount, reintentos (máx 3, backoff 5 min)
+- ✅ Visita se encola en `markAsVisited()`
+- ✅ Cobranza se encola si falla Supabase
+- ✅ Solicitud se encola si falla Supabase
+- ✅ Procesamiento automático: al arrancar app y al abrir Dashboard
+- ✅ Indicador de pendientes en Drawer: "Sincronización pendiente: N"
+- ✅ `flutter analyze`: 0 issues
+- ✅ `flutter build apk --debug`: exitoso
 
-### Qué NO tocar todavía
-- App Clientes real, Core Mobile, FastAPI
+### Documentación
+- `docs/FASE2E_SYNC_OUTBOX.md`
+
+### Qué queda para Fase 3 / FastAPI / Core Mobile
+- Resolución avanzada de conflictos
+- Sincronización bidireccional completa
+- Endpoint FastAPI para procesamiento batch
+- App Clientes: notificaciones de cambio de estado
+- Sesión persistente
 
 ---
 
@@ -313,7 +338,7 @@
 | **2B.1** | Mejora Ruta sin API Key | Alta | Completada | Fase 2B |
 | **2C** | Conexión Supabase real (Dashboard, Estado Solicitudes, Reportes) | Alta | Completada | Fase 2A |
 | **2D** | SQLite offline | Alta | Completada | Fase 2A |
-| **2E** | Sync outbox/log | Media | 1 semana | Fase 2D |
+| **2E** | Sync outbox/log | Media | Completada | Fase 2D |
 | **3** | App Clientes + features avanzadas | Media | 4-6 semanas | Fase 2B, 2C, 2D |
 | **4** | Core Mobile FastAPI | Media | 6-8 semanas | Fase 3 |
 | **5** | Flujo end-to-end | Baja | 4-6 semanas | Fase 4 |

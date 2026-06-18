@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_routes.dart';
 import '../../core/constants/app_strings.dart';
+import '../../core/sync/sync_manager.dart';
 import '../../features/auth/data/auth_oficial_repository.dart';
 import '../../features/home/presentation/home_oficial_viewmodel.dart';
 
@@ -93,6 +94,7 @@ class OficialDrawer extends StatelessWidget {
                       onTap: () => _navigateTo(context, item.route),
                     ),
                   ),
+                  _SyncPendingTile(),
                   const Divider(height: 24, indent: 16, endIndent: 16),
                   ListTile(
                     leading: Icon(
@@ -222,6 +224,56 @@ class _DrawerMenuItem {
   final String label;
   final String route;
   final IconData icon;
+}
+
+class _SyncPendingTile extends StatefulWidget {
+  @override
+  State<_SyncPendingTile> createState() => _SyncPendingTileState();
+}
+
+class _SyncPendingTileState extends State<_SyncPendingTile> {
+  int _count = 0;
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final count = await SyncManager.instance.pendingCount();
+    if (mounted) {
+      setState(() {
+        _count = count;
+        _loaded = true;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_loaded) return const SizedBox.shrink();
+    if (_count == 0) return const SizedBox.shrink();
+
+    return ListTile(
+      leading: Icon(
+        Icons.sync_outlined,
+        color: Colors.orange.shade700,
+        size: 22,
+      ),
+      title: Text(
+        'Sincronización pendiente: $_count',
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          color: Colors.orange.shade800,
+        ),
+      ),
+      dense: true,
+      visualDensity: VisualDensity.compact,
+    );
+  }
 }
 
 class _DrawerNavTile extends StatelessWidget {

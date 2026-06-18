@@ -17,8 +17,9 @@ class LocalDb {
 
     return openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -79,6 +80,44 @@ class LocalDb {
         cartera_id TEXT NOT NULL,
         orden INTEGER NOT NULL,
         fecha TEXT NOT NULL
+      )
+    ''');
+
+    await _createSyncTables(db);
+  }
+
+  static Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await _createSyncTables(db);
+    }
+  }
+
+  static Future<void> _createSyncTables(Database db) async {
+    // Cola de sincronización offline → remoto
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS sync_outbox (
+        id TEXT PRIMARY KEY,
+        entity_type TEXT NOT NULL,
+        entity_id TEXT,
+        operation TEXT NOT NULL,
+        payload_json TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        retry_count INTEGER NOT NULL DEFAULT 0,
+        last_error TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        next_retry_at TEXT
+      )
+    ''');
+
+    // Log de sincronización
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS sync_log (
+        id TEXT PRIMARY KEY,
+        outbox_id TEXT,
+        status TEXT NOT NULL,
+        message TEXT,
+        created_at TEXT NOT NULL
       )
     ''');
   }

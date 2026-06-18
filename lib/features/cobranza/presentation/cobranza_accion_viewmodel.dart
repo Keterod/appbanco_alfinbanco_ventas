@@ -2,6 +2,9 @@ import 'package:flutter/foundation.dart';
 
 import '../../../core/location/location_service.dart';
 import '../../../core/supabase/supabase_helper.dart';
+import '../../../core/sync/sync_manager.dart';
+import '../../../core/sync/sync_models.dart';
+import '../../auth/data/asesor_repository.dart';
 import '../data/cobranza_local_repository.dart';
 import '../data/cobranza_repository.dart';
 import '../domain/collection_model.dart';
@@ -209,8 +212,30 @@ class CobranzaAccionViewModel extends ChangeNotifier {
         _successMessage =
             'Gestión guardada y registrada en Supabase.';
       } catch (error, stackTrace) {
-        SupabaseHelper.log('cobranza falló, usando fallback mock');
+        SupabaseHelper.log('cobranza falló, encolando sync');
         SupabaseHelper.logError(error, stackTrace);
+        final asesor = AsesorRepository.instance.current;
+        await SyncManager.instance.enqueueOperation(
+          entityType: SyncEntityType.accionCobranza,
+          entityId: action.id,
+          operation: SyncOperation.insert,
+          payload: {
+            'asesor_id': asesor?.id,
+            'cliente_id': action.clientId,
+            'credito_id': action.creditoId,
+            'documento': action.documento,
+            'cliente_nombre': action.clienteNombre,
+            'tipo_gestion': action.tipoGestion.name,
+            'resultado': action.resultado.name,
+            'monto_gestionado': action.montoPagado,
+            'fecha_compromiso': action.fechaCompromiso?.toIso8601String(),
+            'monto_compromiso': action.montoCompromiso,
+            'observacion': action.observaciones,
+            'lat': action.lat,
+            'lng': action.lng,
+            'timestamp_gestion': action.timestampGestion.toIso8601String(),
+          },
+        );
         _successMessage = SupabaseHelper.fallbackSaveMessage;
       }
     } else {

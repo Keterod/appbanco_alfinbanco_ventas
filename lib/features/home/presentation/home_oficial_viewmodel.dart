@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../core/supabase/supabase_helper.dart';
+import '../../../core/sync/sync_manager.dart';
 import '../../auth/data/asesor_repository.dart';
 import '../../cobranza/data/cobranza_local_repository.dart';
 import '../../estado_solicitudes/data/estado_solicitudes_repository.dart';
@@ -50,6 +51,11 @@ class HomeOficialViewModel extends ChangeNotifier {
     _isLoading = true;
     _usandoDatosReales = false;
     notifyListeners();
+
+    // Procesar pendientes de sincronización al abrir Dashboard
+    try {
+      await SyncManager.instance.processPending();
+    } catch (_) {}
 
     try {
       await _tryLoadReal();

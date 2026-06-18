@@ -41,6 +41,7 @@ class RouteVisitModel {
     required this.id,
     required this.clientId,
     required this.clienteNombre,
+    this.documento,
     required this.direccion,
     required this.tipoGestion,
     required this.prioridad,
@@ -55,6 +56,7 @@ class RouteVisitModel {
   final String id;
   final String clientId;
   final String clienteNombre;
+  final String? documento;
   final String direccion;
   final RouteManagementType tipoGestion;
   final RoutePriority prioridad;
@@ -78,6 +80,7 @@ class RouteVisitModel {
       id: id,
       clientId: clientId,
       clienteNombre: clienteNombre,
+      documento: documento,
       direccion: direccion,
       tipoGestion: tipoGestion,
       prioridad: prioridad,

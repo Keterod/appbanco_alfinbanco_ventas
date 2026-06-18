@@ -2,6 +2,9 @@ import 'package:flutter/foundation.dart';
 
 import '../../../core/location/location_service.dart';
 import '../../../core/storage/visitas_local_datasource.dart';
+import '../../../core/sync/sync_manager.dart';
+import '../../../core/sync/sync_models.dart';
+import '../../auth/data/asesor_repository.dart';
 import '../domain/route_visit_model.dart';
 
 /// ViewModel de planificación de ruta diaria (HU-V09).
@@ -158,6 +161,25 @@ class RutaViewModel extends ChangeNotifier {
       resultado: 'visitado',
     );
 
+    // Encolar sync de actualización de estado
+    final asesor = AsesorRepository.instance.current;
+    final visita = _visitas[index];
+    await SyncManager.instance.enqueueOperation(
+      entityType: SyncEntityType.visita,
+      entityId: visita.id,
+      operation: SyncOperation.updateEstadoVisita,
+      payload: {
+        'visita_id': visita.id,
+        'cliente_id': clientId,
+        'numero_documento': visita.documento,
+        'resultado': 'visitado',
+        'timestamp_visita': DateTime.now().toIso8601String(),
+        'lat': _oficialLat,
+        'lng': _oficialLng,
+        'asesor_id': asesor?.id,
+      },
+    );
+
     _successMessage =
         '${_visitas[index].clienteNombre} marcado como visitado.';
     notifyListeners();
@@ -196,6 +218,7 @@ class RutaViewModel extends ChangeNotifier {
         id: 'vis-001',
         clientId: 'cli-001',
         clienteNombre: 'Rosa Quispe',
+        documento: '45678912',
         direccion: 'Av. Los Olivos 234, Los Olivos, Lima',
         tipoGestion: RouteManagementType.renovacion,
         prioridad: RoutePriority.media,
@@ -210,6 +233,7 @@ class RutaViewModel extends ChangeNotifier {
         id: 'vis-002',
         clientId: 'cli-002',
         clienteNombre: 'Miguel Huamán',
+        documento: '72345618',
         direccion: 'Jr. Huascar 120, Huancayo',
         tipoGestion: RouteManagementType.nuevaSolicitud,
         prioridad: RoutePriority.normal,
@@ -224,6 +248,7 @@ class RutaViewModel extends ChangeNotifier {
         id: 'vis-003',
         clientId: 'cli-003',
         clienteNombre: 'Carmen Flores',
+        documento: '40123456',
         direccion: 'Mz. B Lt. 8 Urb. Santa Rosa, Callao',
         tipoGestion: RouteManagementType.cobranza,
         prioridad: RoutePriority.alta,
@@ -238,6 +263,7 @@ class RutaViewModel extends ChangeNotifier {
         id: 'vis-004',
         clientId: 'cli-004',
         clienteNombre: 'José Ramos',
+        documento: '10876543',
         direccion: 'Av. Universitaria 890, San Martín de Porres',
         tipoGestion: RouteManagementType.renovacion,
         prioridad: RoutePriority.media,
@@ -252,6 +278,7 @@ class RutaViewModel extends ChangeNotifier {
         id: 'vis-005',
         clientId: 'cli-005',
         clienteNombre: 'Ana Torres',
+        documento: '71234567',
         direccion: 'Calle Las Flores 45, San Juan de Lurigancho',
         tipoGestion: RouteManagementType.nuevaSolicitud,
         prioridad: RoutePriority.normal,

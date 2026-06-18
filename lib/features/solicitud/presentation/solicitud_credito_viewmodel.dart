@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import '../../../core/location/location_service.dart';
 import '../../../core/storage/borrador_local_datasource.dart';
 import '../../../core/supabase/supabase_helper.dart';
+import '../../../core/sync/sync_manager.dart';
+import '../../../core/sync/sync_models.dart';
 import '../../auth/data/asesor_repository.dart';
 import '../data/solicitud_repository.dart';
 import '../domain/credit_request_model.dart';
@@ -484,8 +486,35 @@ class SolicitudCreditoViewModel extends ChangeNotifier {
         notifyListeners();
         return true;
       } catch (error, stackTrace) {
-        SupabaseHelper.log('solicitud falló, usando fallback mock');
+        SupabaseHelper.log('solicitud falló, encolando sync');
         SupabaseHelper.logError(error, stackTrace);
+        final asesor = AsesorRepository.instance.current;
+        await SyncManager.instance.enqueueOperation(
+          entityType: SyncEntityType.solicitudCredito,
+          entityId: _numeroExpediente,
+          operation: SyncOperation.insert,
+          payload: {
+            'asesor_id': asesor?.id,
+            'cliente_id': model.clientId,
+            'nombres': model.nombres,
+            'apellidos': model.apellidos,
+            'documento': model.documento,
+            'telefono': model.telefono,
+            'correo': model.correo,
+            'monto_solicitado': model.montoSolicitado,
+            'plazo_meses': model.plazoMeses,
+            'moneda': model.moneda.name,
+            'tipo_cuota': model.tipoCuota?.name,
+            'garantia': model.garantia?.name,
+            'destino_credito': model.destinoCredito,
+            'actividad_economica': model.actividadEconomica,
+            'ingresos_mensuales': model.ingresosMensuales,
+            'gastos_mensuales': model.gastosMensuales,
+            'lat_captura': _latCaptura,
+            'lng_captura': _lngCaptura,
+            'numero_expediente': _numeroExpediente,
+          },
+        );
       }
     }
 

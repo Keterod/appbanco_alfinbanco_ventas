@@ -1,6 +1,6 @@
 # Pendientes técnicos — App Fuerza de Ventas
 
-> Actualizado durante Fase 2D — SQLite offline básico.
+> Actualizado durante Fase 2E — Cola de sincronización offline.
 > Clasificación: ✅ Ya implementado | 🔴 Crítico | 🟡 Importante | ⏸️ Después | 🟢 Opcional
 
 ---
@@ -38,6 +38,12 @@
 | 27 | **Ruta persistente en SQLite** — `VisitasLocalDataSource` guarda estado visitado | `visitas_local_datasource.dart`, `ruta_viewmodel.dart` | Restaura estados al cargar ruta |
 | 28 | **LEFT JOIN en EstadoSolicitudes** — `clientes!inner` → `clientes!left` | `estado_solicitudes_repository.dart` | Permite solicitudes sin cliente vinculado |
 | 29 | **Conectividad en repositorios** — `connectivity_plus` para evitar llamada Supabase offline | `cartera_repository.dart` | Salta a SQLite si no hay red |
+| 30 | **sync_outbox / sync_log** — Tablas + modelo + datasource + manager | `sync_models.dart`, `sync_local_datasource.dart`, `sync_manager.dart` | Cola de sincronización offline→remoto |
+| 31 | **Encolado visita** — `markAsVisited()` encola `update_estado_visita` | `ruta_viewmodel.dart` | Siempre encola, procesa con internet |
+| 32 | **Encolado cobranza** — Si Supabase falla, encola `accion_cobranza insert` | `cobranza_accion_viewmodel.dart` | Fallback offline |
+| 33 | **Encolado solicitud** — Si Supabase falla, encola `solicitud_credito insert` | `solicitud_credito_viewmodel.dart` | Fallback offline |
+| 34 | **Procesamiento al iniciar/Dashboard** — `SyncManager.processPending()` en startup y en `loadDashboard()` | `main.dart`, `home_oficial_viewmodel.dart` | Reintentos con backoff 5 min, máx 3 |
+| 35 | **Indicador de pendientes en Drawer** — Muestra "Sincronización pendiente: N" | `oficial_drawer.dart` | Solo visible si hay > 0 |
 
 ---
 
@@ -58,7 +64,7 @@
 | # | Pendiente | Archivos | Impacto |
 |---|-----------|----------|---------|
 | I1 | **SQLite offline** — cartera, borradores, visitas | `cartera_local_datasource.dart`, `borrador_local_datasource.dart`, `visitas_local_datasource.dart` | ✅ **Fase 2D** — Cartera cacheada, borradores persistidos, visitas guardadas |
-| I3 | **Cola de sincronización** — No existe `sync_outbox`/`sync_log` | — | Sin cola no se puede sincronizar offline→online |
+| I3 | **Cola de sincronización** — `sync_outbox` + `sync_log` con reintentos | `sync_models.dart`, `sync_local_datasource.dart`, `sync_manager.dart` | ✅ **Fase 2E** — Pendientes: resolución conflictos, FastAPI |
 | I4 | **Ficha cliente sin datos para IDs de mora** — `cli-006` a `cli-010` sin mock | `ficha_cliente_viewmodel.dart` | Navegación incompleta desde cobranza |
 | I5 | **Roles** — No existe campo `rol` en `AsesorModel`. Sin control de acceso | `asesor_model.dart` | Todos los usuarios ven lo mismo |
 
