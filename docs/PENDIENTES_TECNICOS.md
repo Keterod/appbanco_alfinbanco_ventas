@@ -1,6 +1,6 @@
 # Pendientes técnicos — App Fuerza de Ventas
 
-> Actualizado durante Fase 2E — Cola de sincronización offline.
+> Actualizado durante Fase 2F — Sesión persistente.
 > Clasificación: ✅ Ya implementado | 🔴 Crítico | 🟡 Importante | ⏸️ Después | 🟢 Opcional
 
 ---
@@ -44,6 +44,9 @@
 | 33 | **Encolado solicitud** — Si Supabase falla, encola `solicitud_credito insert` | `solicitud_credito_viewmodel.dart` | Fallback offline |
 | 34 | **Procesamiento al iniciar/Dashboard** — `SyncManager.processPending()` en startup y en `loadDashboard()` | `main.dart`, `home_oficial_viewmodel.dart` | Reintentos con backoff 5 min, máx 3 |
 | 35 | **Indicador de pendientes en Drawer** — Muestra "Sincronización pendiente: N" | `oficial_drawer.dart` | Solo visible si hay > 0 |
+| 36 | **Sesión persistente** — Auto‑login al abrir app con sesión Supabase válida | `splash_screen.dart`, `auth_oficial_viewmodel.dart` | `supabase_flutter` v2.8.0 persiste sesión automáticamente |
+| 37 | **Cache local del asesor** — Datos mínimos en SQLite (`asesor_cache`) | `session_local_datasource.dart`, `asesor_repository.dart` | Fallback offline en `loadCurrentAsesor()` |
+| 38 | **SplashScreen** — Pantalla de carga que restaura sesión y asesor | `splash_screen.dart`, `app_navigation.dart` | Verifica sesión → carga asesor → navega a Home/Login |
 
 ---
 
@@ -52,7 +55,7 @@
 | # | Pendiente | Archivos | Impacto |
 |---|-----------|----------|---------|
 | C1 | **Configuración segura de Supabase** — URL y anon key hardcodeadas en texto plano | `supabase_config.dart:2-5` | Riesgo de seguridad en producción |
-| C2 | **Sin sesión persistente** — No se configura `persistSession` en inicialización | `main.dart:13-23` | Usuario debe loguearse cada vez que abre la app |
+| C2 | **Sin sesión persistente** ~~— No se configura `persistSession` en inicialización~~ | ~~`main.dart:13-23`~~ | ✅ **Fase 2F** — `supabase_flutter` v2.8.0 persiste sesión automáticamente; `SplashScreen` restaura sesión + cache asesor en SQLite |
 | C3 | **Dashboard sin datos reales** — Métricas hardcodeadas, no consulta Supabase | ~~`home_oficial_viewmodel.dart`~~ | 🟡 **Parcial** — Ahora consulta `ReportesRepository` + `EstadoSolicitudesRepository` con fallback mock |
 | C4 | **Estado solicitudes desde mock** — No consulta `solicitudes_credito` en Supabase | ~~`estado_solicitudes_viewmodel.dart`~~ | 🟡 **Parcial** — Ahora consulta `EstadoSolicitudesRepository` (join `clientes`) con fallback mock |
 | C5 | **Reportes desde mock** — Indicadores no reflejan datos reales | ~~`reportes_viewmodel.dart`~~ | 🟡 **Parcial** — Ahora consulta `ReportesRepository` (3 tablas) con fallback mock |
@@ -67,6 +70,7 @@
 | I3 | **Cola de sincronización** — `sync_outbox` + `sync_log` con reintentos | `sync_models.dart`, `sync_local_datasource.dart`, `sync_manager.dart` | ✅ **Fase 2E** — Pendientes: resolución conflictos, FastAPI |
 | I4 | **Ficha cliente sin datos para IDs de mora** — `cli-006` a `cli-010` sin mock | `ficha_cliente_viewmodel.dart` | Navegación incompleta desde cobranza |
 | I5 | **Roles** — No existe campo `rol` en `AsesorModel`. Sin control de acceso | `asesor_model.dart` | Todos los usuarios ven lo mismo |
+| I6 | **Cache asesor en SQLite plano** — No cifrado, sin expiración | `session_local_datasource.dart` | Evaluar `flutter_secure_storage` en producción |
 
 ---
 

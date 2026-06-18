@@ -67,5 +67,6 @@ class AuthOficialRepository {
       }
     }
     AsesorRepository.instance.clear();
+    await AsesorRepository.instance.clearCache();
   }
 }

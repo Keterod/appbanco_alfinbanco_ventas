@@ -17,7 +17,7 @@ class LocalDb {
 
     return openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -84,11 +84,26 @@ class LocalDb {
     ''');
 
     await _createSyncTables(db);
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS asesor_cache (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+    ''');
   }
 
   static Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await _createSyncTables(db);
+    }
+    if (oldVersion < 3) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS asesor_cache (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL
+        )
+      ''');
     }
   }
 

@@ -1,3 +1,4 @@
+import '../../../core/storage/session_local_datasource.dart';
 import '../../../core/supabase/supabase_client.dart';
 import '../../../core/supabase/supabase_helper.dart';
 import '../domain/asesor_model.dart';
@@ -22,24 +23,35 @@ class AsesorRepository {
     final userId = supabase.auth.currentUser!.id;
     SupabaseHelper.log('loadCurrentAsesor userId=$userId');
 
-    final row = await SupabaseHelper.withTimeout(
-      supabase
-          .from('asesores_negocio')
-          .select()
-          .eq('user_id', userId)
-          .maybeSingle(),
-      operation: 'asesores_negocio',
-    );
+    try {
+      final row = await SupabaseHelper.withTimeout(
+        supabase
+            .from('asesores_negocio')
+            .select()
+            .eq('user_id', userId)
+            .maybeSingle(),
+        operation: 'asesores_negocio',
+      );
 
-    if (row == null) {
-      SupabaseHelper.log('asesor no encontrado para user_id=$userId');
-      _current = null;
-      return null;
+      if (row == null) {
+        SupabaseHelper.log('asesor no encontrado para user_id=$userId');
+        _current = null;
+        return null;
+      }
+
+      _current = _mapRow(row);
+      _saveToCache(_current!);
+      SupabaseHelper.log('asesor cargado id=${_current!.id}');
+      return _current;
+    } catch (e) {
+      SupabaseHelper.log('loadCurrentAsesor falló, intentando cache local: $e');
+      final restored = await _tryRestoreFromCache();
+      if (restored != null) {
+        _current = restored;
+        SupabaseHelper.log('asesor restaurado desde cache local id=${_current!.id}');
+      }
+      return _current;
     }
-
-    _current = _mapRow(row);
-    SupabaseHelper.log('asesor cargado id=${_current!.id}');
-    return _current;
   }
 
   Future<AsesorModel> requireCurrentAsesor() async {
@@ -50,6 +62,41 @@ class AsesorRepository {
       );
     }
     return asesor;
+  }
+
+  Future<AsesorModel?> _tryRestoreFromCache() async {
+    final cache = await SessionLocalDataSource.instance.loadAsesorSession();
+    if (cache.isEmpty) return null;
+    final id = cache['id'];
+    final userId = cache['user_id'];
+    if (id == null || userId == null || id.isEmpty) return null;
+    return AsesorModel(
+      id: id,
+      userId: userId,
+      codigoEmpleado: cache['codigo_empleado'] ?? '',
+      nombres: cache['nombres'] ?? '',
+      apellidos: cache['apellidos'] ?? '',
+      agenciaId: cache['agencia_id'],
+    );
+  }
+
+  Future<void> _saveToCache(AsesorModel asesor) async {
+    try {
+      await SessionLocalDataSource.instance.saveAsesorSession({
+        'id': asesor.id,
+        'user_id': asesor.userId,
+        'codigo_empleado': asesor.codigoEmpleado,
+        'nombres': asesor.nombres,
+        'apellidos': asesor.apellidos,
+        if (asesor.agenciaId != null) 'agencia_id': asesor.agenciaId!,
+      });
+    } catch (_) {}
+  }
+
+  Future<void> clearCache() async {
+    try {
+      await SessionLocalDataSource.instance.clearAsesorSession();
+    } catch (_) {}
   }
 
   AsesorModel _mapRow(Map<String, dynamic> row) {

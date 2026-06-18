@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/supabase/supabase_client.dart';
 import '../../../core/supabase/supabase_config.dart';
 import '../../../core/supabase/supabase_helper.dart';
 import '../data/auth_oficial_repository.dart';
@@ -11,6 +12,7 @@ class AuthOficialViewModel extends ChangeNotifier {
 
   bool _isLoading = false;
   bool _isSuccess = false;
+  bool _isRestoring = false;
   String? _errorMessage;
 
   /// Credenciales de referencia para demo / Supabase.
@@ -19,8 +21,51 @@ class AuthOficialViewModel extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
   bool get isSuccess => _isSuccess;
+  bool get isRestoring => _isRestoring;
   String? get errorMessage => _errorMessage;
   bool get usesSupabase => SupabaseHelper.isReady;
+
+  Future<bool> tryRestoreSession() async {
+    _isRestoring = true;
+    notifyListeners();
+
+    debugPrint('[AUTH] checking persisted session');
+
+    if (!SupabaseHelper.isReady) {
+      debugPrint('[AUTH] Supabase no disponible');
+      _isRestoring = false;
+      notifyListeners();
+      return false;
+    }
+
+    final session = supabase.auth.currentSession;
+    if (session == null) {
+      debugPrint('[AUTH] no supabase session found');
+      _isRestoring = false;
+      notifyListeners();
+      return false;
+    }
+
+    debugPrint('[AUTH] supabase session found userId=${session.user.id}');
+
+    try {
+      final asesor = await AsesorRepository.instance.loadCurrentAsesor();
+      if (asesor != null) {
+        debugPrint('[AUTH] asesor loaded from Supabase id=${asesor.id}');
+        _isSuccess = true;
+        _isRestoring = false;
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      SupabaseHelper.log('loadCurrentAsesor falló en restauración: $e');
+    }
+
+    _isRestoring = false;
+    notifyListeners();
+    debugPrint('[AUTH] no valid session, showing login');
+    return false;
+  }
 
   Future<void> login(String employeeCode, String password) async {
     _errorMessage = null;
@@ -66,7 +111,11 @@ class AuthOficialViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> signOut() => _authRepo.signOut();
+  Future<void> signOut() async {
+    debugPrint('[AUTH] logout completed');
+    _isSuccess = false;
+    await _authRepo.signOut();
+  }
 
   String? get asesorNombre =>
       AsesorRepository.instance.current?.nombreCompleto;

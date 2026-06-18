@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../features/auth/presentation/splash_screen.dart';
 import '../../features/auth/presentation/login_oficial_screen.dart';
 import '../../features/home/presentation/home_oficial_screen.dart';
 import '../../features/cartera/presentation/cartera_diaria_screen.dart';
@@ -27,8 +28,9 @@ class AppNavigation extends StatelessWidget {
       title: AppStrings.appTitle,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      initialRoute: AppRoutes.login,
+      initialRoute: AppRoutes.splash,
       routes: {
+        AppRoutes.splash: (_) => const SplashScreen(),
         AppRoutes.login: (_) => const LoginOficialScreen(),
         AppRoutes.homeOficial: (_) => const HomeOficialScreen(),
         AppRoutes.cartera: (_) => const CarteraDiariaScreen(),

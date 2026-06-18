@@ -92,6 +92,10 @@ abstract final class AppStrings {
   // ── Reportes ──────────────────────────────
   static const String reportesTitle = 'Reportes';
 
+  // ── Splash / Sesión ───────────────────────
+  static const String splashChecking = 'Verificando sesión…';
+  static const String splashLoading = 'Cargando sesión…';
+
   // ── Placeholders ──────────────────────────
   static const String placeholderPdfExport =
       'Exportación PDF — función en siguiente fase';

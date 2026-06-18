@@ -233,12 +233,46 @@
 ### Documentación
 - `docs/FASE2E_SYNC_OUTBOX.md`
 
-### Qué queda para Fase 3 / FastAPI / Core Mobile
-- Resolución avanzada de conflictos
-- Sincronización bidireccional completa
-- Endpoint FastAPI para procesamiento batch
-- App Clientes: notificaciones de cambio de estado
-- Sesión persistente
+---
+
+## Fase 2F — Sesión persistente ✅
+
+**Objetivo**: Que el oficial no tenga que iniciar sesión cada vez que abre la app y que pueda entrar a módulos offline con sesión/cache previa.
+
+### Archivos creados
+
+| Archivo | Propósito |
+|---------|-----------|
+| `lib/core/storage/session_local_datasource.dart` | Cache local del perfil del asesor en SQLite (tabla `asesor_cache`, clave/valor) |
+| `lib/features/auth/presentation/splash_screen.dart` | Pantalla de carga inicial que verifica sesión y restaura asesor |
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `lib/core/storage/local_db.dart` | DB versión 2→3, tabla `asesor_cache` en `onCreate`+`onUpgrade` |
+| `lib/core/constants/app_routes.dart` | Ruta `splash` agregada |
+| `lib/core/constants/app_strings.dart` | Textos `splashChecking`, `splashLoading` |
+| `lib/app/navigation/app_navigation.dart` | `initialRoute`→`AppRoutes.splash`, ruta SplashScreen |
+| `lib/features/auth/data/asesor_repository.dart` | Cache asesor tras carga exitosa, fallback a cache local si Supabase falla |
+| `lib/features/auth/data/auth_oficial_repository.dart` | `signOut()` limpia cache local |
+| `lib/features/auth/presentation/auth_oficial_viewmodel.dart` | Nuevo `tryRestoreSession()`, `signOut()` marca isSuccess+log |
+
+### Riesgo
+- Cache asesor en SQLite plano (no cifrado); evaluar `flutter_secure_storage` en producción
+- Si el asesor cambia de agencia/roles offline, no se refleja hasta próxima conexión
+- Timeout de 15s puede alargar splash en redes lentas
+
+### Criterio de aceptación cumplido
+- ✅ Login actual sigue funcionando igual
+- ✅ Al abrir app con sesión previa e internet → navega directo a Home
+- ✅ Al abrir app sin internet pero con sesión/cache previa → permite entrar con datos cacheados
+- ✅ Cartera diaria offline funciona con cache SQLite y badge "Offline"
+- ✅ Logout limpia sesión Supabase + cache local + vuelve a Login
+- ✅ `flutter analyze`: 0 issues
+
+### Documentación
+- `docs/FASE2F_SESION_PERSISTENTE.md`
 
 ---
 
@@ -339,6 +373,7 @@
 | **2C** | Conexión Supabase real (Dashboard, Estado Solicitudes, Reportes) | Alta | Completada | Fase 2A |
 | **2D** | SQLite offline | Alta | Completada | Fase 2A |
 | **2E** | Sync outbox/log | Media | Completada | Fase 2D |
+| **2F** | Sesión persistente | **Crítica** | Completada | Fase 2E |
 | **3** | App Clientes + features avanzadas | Media | 4-6 semanas | Fase 2B, 2C, 2D |
 | **4** | Core Mobile FastAPI | Media | 6-8 semanas | Fase 3 |
 | **5** | Flujo end-to-end | Baja | 4-6 semanas | Fase 4 |
