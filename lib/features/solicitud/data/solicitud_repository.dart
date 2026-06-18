@@ -27,6 +27,11 @@ class SolicitudRepository {
     CreditRequestModel model, {
     double? latCaptura,
     double? lngCaptura,
+    List<Map<String, dynamic>>? cronogramaJson,
+    int? scorePreEvaluacion,
+    String? elegibilidad,
+    double? ratioCapacidadPago,
+    String? riesgoAsignado,
   }) async {
     SupabaseHelper.log('solicitud insert iniciado');
 
@@ -70,6 +75,13 @@ class SolicitudRepository {
         'lat_captura': latCaptura ?? _fallbackLat,
         'lng_captura': lngCaptura ?? _fallbackLng,
         'pendiente_sync': false,
+        if (cronogramaJson != null) 'cronograma_json': cronogramaJson,
+        if (scorePreEvaluacion != null)
+          'score_pre_evaluacion': scorePreEvaluacion,
+        if (elegibilidad != null) 'elegibilidad': elegibilidad,
+        if (ratioCapacidadPago != null)
+          'ratio_capacidad_pago': ratioCapacidadPago,
+        if (riesgoAsignado != null) 'riesgo_asignado': riesgoAsignado,
       };
 
       SupabaseHelper.log('solicitud payload keys=${payload.keys.join(', ')}');

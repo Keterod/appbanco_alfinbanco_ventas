@@ -366,17 +366,43 @@ Penalizaciones: buró revisar -20pts (mín. OBSERVADO), buró bloqueado score m�
 
 ---
 
-## Fase 3A.3 — Persistencia Supabase + sync 📅
+## Fase 3A.3 — Persistencia Supabase + sync ✅
 
 **Objetivo**: Persistir cronograma (JSONB), score y elegibilidad en Supabase; incluir en sync offline.
 
-### Archivos probables a modificar
-- `solicitud_repository.dart` (agregar `cronograma_json`, `score_pre_evaluacion`, `elegibilidad` al payload)
-- `sync_manager.dart` (incluir cronograma y pre-evaluación en sync offline)
-- `docs/sql/FASE2C_SUPABASE_DATOS_REALES.sql` (nuevas columnas)
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `lib/features/solicitud/data/solicitud_repository.dart` | `insertSolicitud()` acepta 5 parámetros opcionales nuevos. Se incluyen en payload Supabase. |
+| `lib/features/solicitud/presentation/solicitud_credito_viewmodel.dart` | `submitRequest()` serializa cronograma y pre-evaluación. Los pasa al repositorio online y al payload sync offline. |
+| `lib/core/sync/sync_manager.dart` | `_processSolicitudCredito()` sanitiza los 5 campos nuevos. Logs `[SYNC]`. |
+| `docs/sql/FASE2C_SUPABASE_DATOS_REALES.sql` | Nueva sección "Fase 3A.3" con ALTER TABLE + consulta de verificación. |
+| `analysis_options.yaml` | Se agregó `use_null_aware_elements: false`. |
+
+### Columnas nuevas en `solicitudes_credito`
+
+| Columna | Tipo |
+|---|---|
+| `cronograma_json` | JSONB |
+| `score_pre_evaluacion` | INTEGER |
+| `elegibilidad` | TEXT |
+| `ratio_capacidad_pago` | NUMERIC |
+| `riesgo_asignado` | TEXT |
 
 ### Riesgo
-- Requiere migración de esquema Supabase.
+- Se usa `cronograma_json` (JSONB) en vez de tabla `cronograma_pagos`. Decisión MVP.
+- Pre-evaluación sin buró real, asistida.
+
+### Criterio de aceptación cumplido
+- ✅ Cronograma persiste online y offline (via sync_outbox).
+- ✅ Pre-evaluación (score, elegibilidad, ratio, riesgo) persiste online y offline.
+- ✅ Sync manager sanitiza los nuevos campos.
+- ✅ `flutter analyze`: 0 issues.
+- ✅ `flutter build apk --debug`: exitoso.
+
+### Documentación
+- `docs/FASE3A3_PERSISTENCIA_SUPABASE_SYNC.md`
 
 ---
 
@@ -447,7 +473,7 @@ Penalizaciones: buró revisar -20pts (mín. OBSERVADO), buró bloqueado score m�
 | **2F** | Sesión persistente | **Crítica** | Completada | Fase 2E |
 | **3A.1** | Cronograma de cuotas | Alta | Completada | Fase 2C, 2F |
 | **3A.2** | Pre-evaluación simple | Alta | Completada | Fase 3A.1 |
-| **3A.3** | Persistencia Supabase + sync | Media | Pendiente | Fase 3A.1 |
+| **3A.3** | Persistencia Supabase + sync | Media | Completada | Fase 3A.1 |
 | **3B** | App Clientes, roles, cámara, firma, PDF | Media | 4-6 semanas | Fase 3A |
 | **4** | Core Mobile FastAPI | Media | 6-8 semanas | Fase 3 |
 | **5** | Flujo end-to-end | Baja | 4-6 semanas | Fase 4 |

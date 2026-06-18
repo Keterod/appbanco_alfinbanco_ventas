@@ -125,6 +125,42 @@
 --    'Compromiso de pago', 500, -12.0464, -77.0428);
 
 -- ==============================================================
+-- Fase 3A.3 — Migración: cronograma_json + pre-evaluación
+-- Ejecutar en consola SQL de Supabase Dashboard.
+-- ==============================================================
+
+alter table public.solicitudes_credito
+add column if not exists cronograma_json jsonb;
+
+alter table public.solicitudes_credito
+add column if not exists score_pre_evaluacion integer;
+
+alter table public.solicitudes_credito
+add column if not exists elegibilidad text;
+
+alter table public.solicitudes_credito
+add column if not exists ratio_capacidad_pago numeric;
+
+alter table public.solicitudes_credito
+add column if not exists riesgo_asignado text;
+
+-- Verificación: últimas 10 solicitudes con los nuevos campos
+-- select
+--   numero_expediente,
+--   monto_solicitado,
+--   plazo_meses,
+--   cuota_estimada,
+--   score_pre_evaluacion,
+--   elegibilidad,
+--   ratio_capacidad_pago,
+--   riesgo_asignado,
+--   jsonb_array_length(cronograma_json) as cuotas_generadas,
+--   created_at
+-- from public.solicitudes_credito
+-- order by created_at desc
+-- limit 10;
+
+-- ==============================================================
 -- CONSULTAS DE PRUEBA
 -- ==============================================================
 

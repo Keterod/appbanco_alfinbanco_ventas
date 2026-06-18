@@ -34,6 +34,14 @@ enum TipoNegocio {
 
   const TipoNegocio(this.label);
   final String label;
+
+  static TipoNegocio? fromLabel(String? label) {
+    if (label == null) return null;
+    return TipoNegocio.values.firstWhere(
+      (e) => e.label == label,
+      orElse: () => TipoNegocio.otro,
+    );
+  }
 }
 
 /// Moneda del crédito.

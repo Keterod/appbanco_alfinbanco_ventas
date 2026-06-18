@@ -156,7 +156,8 @@ class SolicitudCreditoViewModel extends ChangeNotifier {
     _successMessage = null;
   }
 
-  Future<void> loadInitialData(String? clientId) async {
+  Future<void> loadInitialData(String? clientId,
+      {Map<String, dynamic>? clientData}) async {
     _isLoading = true;
     notifyListeners();
 
@@ -164,38 +165,84 @@ class SolicitudCreditoViewModel extends ChangeNotifier {
 
     _clientId = clientId;
 
-    // Intentar restaurar borrador previo
+    if (clientData != null) {
+      debugPrint(
+          '[SOLICITUD] argumentos recibidos desde ficha cliente='
+          '${clientData.length} keys');
+      _applyClientData(clientData);
+      debugPrint(
+          '[SOLICITUD] datos autocompletados desde ficha cliente');
+    }
+
+    // Intentar restaurar borrador previo (sobrescribe datos de ficha si existe)
     final draft =
         await BorradorLocalDataSource.instance.loadBorrador(clienteId: clientId);
     if (draft != null) {
       _restoreFromDraft(draft);
-    } else if (clientId != null) {
+    } else if (clientData == null && clientId != null) {
       final seed = _clientSeed[clientId];
       if (seed != null) {
-        _nombres = seed.nombres;
-        _apellidos = seed.apellidos;
-        _documento = seed.documento;
-        _telefono = seed.telefono;
-        _correo = seed.correo;
-        _fechaNacimiento = seed.fechaNacimiento;
-        _tipoNegocio = seed.tipoNegocio;
-        _nombreNegocio = seed.nombreNegocio;
-        _direccionNegocio = seed.direccionNegocio;
-        _antiguedadNegocioMeses = seed.antiguedadMeses;
-        _actividadEconomica = seed.actividadEconomica;
-        if (seed.montoSugerido != null) {
-          _montoSolicitado = seed.montoSugerido!.clamp(500, 150000);
-        }
-        if (seed.plazoSugerido != null &&
-            plazosPermitidosMeses.contains(seed.plazoSugerido)) {
-          _plazoMeses = seed.plazoSugerido!;
-        }
+        _applyClientSeed(seed);
       }
     }
 
     calculateInstallment();
     _isLoading = false;
     notifyListeners();
+  }
+
+  void _applyClientData(Map<String, dynamic> data) {
+    if (data['nombres'] is String) _nombres = data['nombres'] as String;
+    if (data['apellidos'] is String) _apellidos = data['apellidos'] as String;
+    final doc = (data['documento'] as String?)?.replaceAll(RegExp(r'\D'), '');
+    if (doc != null && doc.length >= 8) _documento = doc;
+    if (data['telefono'] is String) _telefono = data['telefono'] as String;
+    if (data['direccion'] is String) {
+      _direccionNegocio = data['direccion'] as String;
+    }
+    final tipoNegocioStr = data['tipoNegocio'] as String?;
+    if (tipoNegocioStr != null) {
+      _tipoNegocio = TipoNegocio.fromLabel(tipoNegocioStr);
+    }
+    if (data['nombreNegocio'] is String) {
+      _nombreNegocio = data['nombreNegocio'] as String;
+    }
+    if (data['antiguedadMeses'] is int) {
+      _antiguedadNegocioMeses = data['antiguedadMeses'] as int;
+    }
+    if (data['montoSugerido'] is num) {
+      _montoSolicitado =
+          (data['montoSugerido'] as num).toDouble().clamp(500, 150000);
+    }
+    if (data['plazoSugerido'] is int &&
+        plazosPermitidosMeses.contains(data['plazoSugerido'])) {
+      _plazoMeses = data['plazoSugerido'] as int;
+    }
+
+    debugPrint(
+        '[SOLICITUD] cliente preseleccionado id=$_clientId '
+        'documento=$_documento');
+  }
+
+  void _applyClientSeed(_ClientSeed seed) {
+    _nombres = seed.nombres;
+    _apellidos = seed.apellidos;
+    _documento = seed.documento;
+    _telefono = seed.telefono;
+    _correo = seed.correo;
+    _fechaNacimiento = seed.fechaNacimiento;
+    _tipoNegocio = seed.tipoNegocio;
+    _nombreNegocio = seed.nombreNegocio;
+    _direccionNegocio = seed.direccionNegocio;
+    _antiguedadNegocioMeses = seed.antiguedadMeses;
+    _actividadEconomica = seed.actividadEconomica;
+    if (seed.montoSugerido != null) {
+      _montoSolicitado = seed.montoSugerido!.clamp(500, 150000);
+    }
+    if (seed.plazoSugerido != null &&
+        plazosPermitidosMeses.contains(seed.plazoSugerido)) {
+      _plazoMeses = seed.plazoSugerido!;
+    }
   }
 
   void setNombres(String v) {
@@ -644,6 +691,8 @@ class SolicitudCreditoViewModel extends ChangeNotifier {
 
     final model = buildModel();
 
+    final cronogramaJson = _cronograma.map((e) => e.toJson()).toList();
+
     if (SupabaseHelper.hasSession) {
       try {
         SupabaseHelper.log('SolicitudCreditoViewModel submit Supabase');
@@ -651,6 +700,11 @@ class SolicitudCreditoViewModel extends ChangeNotifier {
           model,
           latCaptura: _latCaptura,
           lngCaptura: _lngCaptura,
+          cronogramaJson: cronogramaJson,
+          scorePreEvaluacion: _preEvaluacion?.score,
+          elegibilidad: _preEvaluacion?.elegibilidad.name,
+          ratioCapacidadPago: _preEvaluacion?.ratioCapacidadPago,
+          riesgoAsignado: _preEvaluacion?.riesgo.name,
         );
         _numeroExpediente = result.numeroExpediente;
         _estadoSolicitud = EstadoSolicitud.enviadoDemo;
@@ -688,6 +742,11 @@ class SolicitudCreditoViewModel extends ChangeNotifier {
             'lat_captura': _latCaptura,
             'lng_captura': _lngCaptura,
             'numero_expediente': _numeroExpediente,
+            'cronograma_json': cronogramaJson,
+            'score_pre_evaluacion': _preEvaluacion?.score,
+            'elegibilidad': _preEvaluacion?.elegibilidad.name,
+            'ratio_capacidad_pago': _preEvaluacion?.ratioCapacidadPago,
+            'riesgo_asignado': _preEvaluacion?.riesgo.name,
           },
         );
       }

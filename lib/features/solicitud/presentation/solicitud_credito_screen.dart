@@ -11,9 +11,10 @@ import 'solicitud_credito_viewmodel.dart';
 
 /// Wizard de nueva solicitud de crédito (HU-V04).
 class SolicitudCreditoScreen extends StatefulWidget {
-  const SolicitudCreditoScreen({super.key, this.clientId});
+  const SolicitudCreditoScreen({super.key, this.clientId, this.clientData});
 
   final String? clientId;
+  final Map<String, dynamic>? clientData;
 
   @override
   State<SolicitudCreditoScreen> createState() => _SolicitudCreditoScreenState();
@@ -31,7 +32,7 @@ class _SolicitudCreditoScreenState extends State<SolicitudCreditoScreen> {
   void initState() {
     super.initState();
     _vm = SolicitudCreditoViewModel();
-    _vm.loadInitialData(widget.clientId);
+    _vm.loadInitialData(widget.clientId, clientData: widget.clientData);
     _vm.captureLocation();
   }
 
@@ -759,29 +760,35 @@ class _PreEvaluacionCard extends StatelessWidget {
                 border: Border.all(color: color.withValues(alpha: 0.4)),
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(icon, color: color, size: 32),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        elegibilidad.label,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: color,
-                            ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        eval.mensaje,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: color,
-                            ),
-                      ),
-                    ],
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Icon(icon, color: color, size: 32),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          elegibilidad.label,
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: color,
+                              ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          eval.mensaje,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: color,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [

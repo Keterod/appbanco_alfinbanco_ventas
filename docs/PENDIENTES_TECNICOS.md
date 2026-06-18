@@ -1,6 +1,6 @@
 # Pendientes técnicos — App Fuerza de Ventas
 
-> Actualizado durante Fase 3A.2 — Pre-evaluación simple.
+> Actualizado durante Fase 3A.3 — Persistencia Supabase + sync.
 > Clasificación: ✅ Ya implementado | 🔴 Crítico | 🟡 Importante | ⏸️ Después | 🟢 Opcional
 
 ---
@@ -47,8 +47,9 @@
 | 36 | **Sesión persistente** — Auto‑login al abrir app con sesión Supabase válida | `splash_screen.dart`, `auth_oficial_viewmodel.dart` | `supabase_flutter` v2.8.0 persiste sesión automáticamente |
 | 37 | **Cache local del asesor** — Datos mínimos en SQLite (`asesor_cache`) | `session_local_datasource.dart`, `asesor_repository.dart` | Fallback offline en `loadCurrentAsesor()` |
 | 38 | **SplashScreen** — Pantalla de carga que restaura sesión y asesor | `splash_screen.dart`, `app_navigation.dart` | Verifica sesión → carga asesor → navega a Home/Login |
-| 39 | **Cronograma de cuotas (cálculo + UI)** — Tabla de amortización mes a mes con sistema francés | `cronograma_row.dart`, `solicitud_credito_viewmodel.dart`, `solicitud_credito_screen.dart` | Cálculo en memoria, no persiste en Supabase (pendiente 3A.3). Solo cuota fija. |
-| 40 | **Pre-evaluación simple (cálculo + UI)** — Score, elegibilidad (APTO/OBSERVADO/NO APTO), ratio de capacidad de pago, riesgo, motivos | `pre_evaluacion_result.dart`, `solicitud_credito_viewmodel.dart`, `solicitud_credito_screen.dart` | Evaluación en memoria basada en ingresos/gastos/cuota. No persiste en Supabase ni integra buró automáticamente (pendiente 3A.3). |
+| 39 | **Cronograma de cuotas (cálculo + UI + persistencia)** — Tabla de amortización mes a mes con sistema francés | `cronograma_row.dart`, `solicitud_credito_viewmodel.dart`, `solicitud_credito_screen.dart`, `solicitud_repository.dart`, `sync_manager.dart` | ✅ Persistencia en Supabase (JSONB) y sync offline completada en 3A.3. Solo cuota fija. |
+| 40 | **Pre-evaluación simple (cálculo + UI + persistencia)** — Score, elegibilidad (APTO/OBSERVADO/NO APTO), ratio de capacidad de pago, riesgo, motivos | `pre_evaluacion_result.dart`, `solicitud_credito_viewmodel.dart`, `solicitud_credito_screen.dart`, `solicitud_repository.dart`, `sync_manager.dart` | ✅ Persistencia en Supabase y sync offline completada en 3A.3. Sin integración automática con buró. |
+| 41 | **App Fuerza de Ventas cerrada funcionalmente** — Todos los módulos del alcance original completados | Varios | Pendiente: PDF, cámara real, firma real, roles, App Clientes, Core Mobile, buró real. |
 
 ---
 
@@ -61,6 +62,7 @@
 | C3 | **Dashboard sin datos reales** — Métricas hardcodeadas, no consulta Supabase | ~~`home_oficial_viewmodel.dart`~~ | 🟡 **Parcial** — Ahora consulta `ReportesRepository` + `EstadoSolicitudesRepository` con fallback mock |
 | C4 | **Estado solicitudes desde mock** — No consulta `solicitudes_credito` en Supabase | ~~`estado_solicitudes_viewmodel.dart`~~ | 🟡 **Parcial** — Ahora consulta `EstadoSolicitudesRepository` (join `clientes`) con fallback mock |
 | C5 | **Reportes desde mock** — Indicadores no reflejan datos reales | ~~`reportes_viewmodel.dart`~~ | 🟡 **Parcial** — Ahora consulta `ReportesRepository` (3 tablas) con fallback mock |
+| C6 | **App Fuerza de Ventas funcionalmente completa** — Todos los módulos del alcance original implementados | — | ✅ **Fase 3A.3** — La app está cerrada. Pendientes no críticos: PDF, cámara real, firma real, roles, App Clientes, Core Mobile, buró real. |
 
 ---
 
@@ -84,8 +86,8 @@
 | D2 | **Firma digital real** — Reemplazar `registrarFirmaSimulada()` | `signature` |
 | D3 | **PDF real** — Exportación de reportes y fichas | `pdf`, `printing` |
 | D4 | **Notificaciones push** — Cambio de estado de solicitud | `firebase_messaging`, `flutter_local_notifications` |
-| D5 | **Cronograma de cuotas** ~~— Desglose mes a mes en simulación~~ | ~~—~~ | 🟡 **Fase 3A.1** — Implementado en UI y cálculo (sistema francés, solo cuota fija). Falta persistencia en Supabase (3A.3). |
-| D6 | **Pre-evaluación de cliente** — Puntuación y reglas de negocio | 🟡 **Fase 3A.2** — Implementado en UI y cálculo (score, elegibilidad, ratio, riesgo, motivos). Falta persistencia en Supabase e integración automática con buró (3A.3). |
+| D5 | **Cronograma de cuotas** ~~— Desglose mes a mes en simulación~~ | ~~—~~ | ✅ **Fase 3A.1 + 3A.3** — Implementado, persiste en Supabase (JSONB), sync offline. |
+| D6 | **Pre-evaluación de cliente** — Puntuación y reglas de negocio | 🟡 **Fase 3A.2 + 3A.3** — Implementado en UI/cálculo, persiste en Supabase, sync offline. Falta integración automática con buró real. |
 | D7 | **Bloqueo por intentos fallidos** — Protección contra fuerza bruta | — |
 | D8 | **Integración buró real (SBS/Equifax)** — Reemplazar datos mock | — |
 

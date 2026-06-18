@@ -41,6 +41,12 @@ class AppNavigation extends StatelessWidget {
         },
         AppRoutes.solicitudCredito: (context) {
           final args = ModalRoute.of(context)!.settings.arguments;
+          if (args is Map<String, dynamic>) {
+            return SolicitudCreditoScreen(
+              clientId: args['clientId']?.toString(),
+              clientData: args,
+            );
+          }
           final clientId = args is String ? args : null;
           return SolicitudCreditoScreen(clientId: clientId);
         },

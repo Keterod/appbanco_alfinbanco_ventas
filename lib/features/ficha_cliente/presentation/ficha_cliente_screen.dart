@@ -56,10 +56,30 @@ class _FichaClienteScreenState extends State<FichaClienteScreen> {
   }
 
   void _onIniciarSolicitud() {
+    final client = _viewModel.client;
+    final args = <String, dynamic>{
+      'clientId': widget.clientId,
+    };
+    if (client != null) {
+      // Parse antigüedad string like "72 meses" to int months
+      final antiguedadMatch = RegExp(r'(\d+)').firstMatch(client.antiguedadNegocio);
+      args['nombres'] = client.nombres;
+      args['apellidos'] = client.apellidos;
+      args['documento'] = client.documento;
+      args['telefono'] = client.telefono;
+      args['direccion'] = client.direccion;
+      args['tipoNegocio'] = client.tipoNegocio;
+      args['nombreNegocio'] = client.nombreNegocio;
+      args['antiguedadMeses'] = antiguedadMatch != null
+          ? int.tryParse(antiguedadMatch.group(1) ?? '0') ?? 0
+          : 0;
+      args['montoSugerido'] = client.montoPreaprobado;
+      args['plazoSugerido'] = client.plazoSugerido;
+    }
     Navigator.pushNamed(
       context,
       AppRoutes.solicitudCredito,
-      arguments: widget.clientId,
+      arguments: args,
     );
   }
 

@@ -229,8 +229,31 @@ class SyncManager {
     if (payload['numero_expediente'] != null) {
       cleanPayload['numero_expediente'] = payload['numero_expediente']?.toString();
     }
+    if (payload['cronograma_json'] != null) {
+      cleanPayload['cronograma_json'] = payload['cronograma_json'];
+    }
+    if (payload['score_pre_evaluacion'] != null) {
+      cleanPayload['score_pre_evaluacion'] = payload['score_pre_evaluacion'];
+    }
+    if (payload['elegibilidad'] != null) {
+      cleanPayload['elegibilidad'] = payload['elegibilidad']?.toString();
+    }
+    if (payload['ratio_capacidad_pago'] != null) {
+      cleanPayload['ratio_capacidad_pago'] = payload['ratio_capacidad_pago'];
+    }
+    if (payload['riesgo_asignado'] != null) {
+      cleanPayload['riesgo_asignado'] = payload['riesgo_asignado']?.toString();
+    }
 
-    debugPrint('[SYNC] solicitud payload keys=${cleanPayload.keys.toList()}');
+    final tieneCrono = payload['cronograma_json'] != null;
+    final cuotasCount = (payload['cronograma_json'] is List)
+        ? (payload['cronograma_json'] as List).length
+        : 0;
+    debugPrint(
+        '[SYNC] solicitud payload incluye cronograma=$tieneCrono cuotas=$cuotasCount');
+    debugPrint(
+        '[SYNC] solicitud pre-eval score=${payload['score_pre_evaluacion']} elegibilidad=${payload['elegibilidad']}');
+    debugPrint('[SYNC] solicitud synced id=${cleanPayload['id']}');
     await supabase.from('solicitudes_credito').insert(cleanPayload);
   }
 
