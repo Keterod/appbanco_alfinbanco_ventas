@@ -15,10 +15,25 @@ class CarteraViewModel extends ChangeNotifier {
 
   bool _isLoading = false;
   bool _usingMock = true;
+  String _dataSource = 'demo';
   late List<ClientPortfolioModel> _clients;
 
   bool get isLoading => _isLoading;
   bool get usingMock => _usingMock;
+  bool get isOffline => _dataSource == 'offline';
+  String get dataSource => _dataSource;
+  String get dataSourceLabel {
+    switch (_dataSource) {
+      case 'live':
+        return 'Sincronizado con Supabase';
+      case 'offline':
+        return 'Modo offline · datos guardados';
+      case 'demo':
+        return 'Modo demo';
+      default:
+        return _dataSource;
+    }
+  }
 
   String get officerName =>
       AsesorRepository.instance.current?.nombreCompleto ?? 'Diego';
@@ -34,29 +49,41 @@ class CarteraViewModel extends ChangeNotifier {
 
   Future<void> loadCartera() async {
     _isLoading = true;
+    _usingMock = true;
     notifyListeners();
+
+    debugPrint('[CARTERA-VM] loadCartera iniciado hasSession=${SupabaseHelper.hasSession}');
 
     if (SupabaseHelper.hasSession) {
       try {
-        SupabaseHelper.log('CarteraViewModel loadCartera Supabase');
+        debugPrint('[CARTERA-VM] llamando _repo.loadCarteraDiaria()');
         final remote = await _repo.loadCarteraDiaria();
+        _dataSource = _repo.lastSource;
+        debugPrint('[CARTERA-VM] _repo.lastSource=$_dataSource remote.length=${remote.length}');
         if (remote.isNotEmpty) {
           _clients = remote;
           _usingMock = false;
           _isLoading = false;
+          debugPrint('[CARTERA-VM] datos remotos asignados, source=$_dataSource');
           notifyListeners();
           return;
         }
-        SupabaseHelper.log('cartera vacía, usando fallback mock');
+        debugPrint('[CARTERA-VM] datos vacíos desde repo, source=$_dataSource');
       } catch (error, stackTrace) {
+        _dataSource = _repo.lastSource;
+        debugPrint('[CARTERA-VM] excepción: $error');
+        debugPrint('[CARTERA-VM] _repo.lastSource después de error=$_dataSource');
         SupabaseHelper.log('cartera falló, usando fallback mock');
         SupabaseHelper.logError(error, stackTrace);
       }
+    } else {
+      debugPrint('[CARTERA-VM] sin sesión → demo');
     }
 
     _clients = List.from(_seedClients);
-    _usingMock = true;
+    _dataSource = 'demo';
     _isLoading = false;
+    debugPrint('[CARTERA-VM] fallback a seed demo, source=$_dataSource');
     notifyListeners();
   }
 

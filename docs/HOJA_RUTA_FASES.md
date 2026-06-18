@@ -146,35 +146,46 @@
 
 ---
 
-## Fase 2D — SQLite offline básico con cola de pendientes 📅
+## Fase 2D — SQLite offline básico ✅
 
----
+**Objetivo**: Persistencia offline local con fallback: Supabase → SQLite → demo/mock.
 
-## Fase 2D — SQLite offline básico con cola de pendientes 📅
+### Archivos creados
 
-**Objetivo**: Implementar persistencia offline para cartera diaria y borradores de solicitud.
+| Archivo | Propósito |
+|---------|-----------|
+| `lib/features/cartera/data/cartera_local_datasource.dart` | CRUD sobre `cartera_cache`: save/load/clear/has/updateEstado |
+| `lib/core/storage/borrador_local_datasource.dart` | Persistencia de borrador de solicitud en `solicitudes_borrador` |
+| `lib/core/storage/visitas_local_datasource.dart` | Persistencia de estado visitado en `visitas_pendientes` |
 
-### Archivos probables a modificar
+### Archivos modificados
 
 | Archivo | Cambio |
 |---------|--------|
-| `local_db.dart` | Agregar helpers de inserción/consulta para las 4 tablas existentes |
-| `cartera_viewmodel.dart` | Guardar cartera en SQLite al cargar, leer desde SQLite si offline |
-| `solicitud_credito_viewmodel.dart` | Guardar borrador en SQLite al cambiar de paso |
-| `cartera_repository.dart` | Estrategia: intentar Supabase, fallback a SQLite |
-| `ruta_viewmodel.dart` | Persistir visitas y estado en SQLite |
+| `client_portfolio_model.dart` | Agregados `toMap()`/`fromMap()` para serialización SQLite+Supabase |
+| `cartera_repository.dart` | Triada: Supabase → SQLite cache → throw (VM→mock). `lastSource` tracker. `connectivity_plus` check. |
+| `cartera_viewmodel.dart` | `_dataSource` getter (`live`/`offline`/`demo`), carga reactiva via `addListener` |
+| `cartera_diaria_screen.dart` | Badge "Offline" o "Demo" en `_StatTile`, listener para actualización |
+| `solicitud_credito_viewmodel.dart` | `saveDraft()` en cada paso, `_restoreFromDraft()` en `loadInitialData()`, borrado en `submitRequest()` |
+| `ruta_viewmodel.dart` | Carga estados guardados de SQLite en `loadTodayRoute()`, `markAsVisited()` ahora `async` y persiste |
+| `estado_solicitudes_repository.dart` | `clientes!inner` → `clientes!left` para incluir solicitudes sin cliente vinculado |
 
-### Riesgo
-- Consistencia de datos entre SQLite local y Supabase remoto
-- Migraciones de esquema SQLite cuando cambien tablas de Supabase
+### Riesgo mitigado
+- **Sin internet**: cartera se carga desde SQLite con badge "Offline"
+- **Sin sesión**: repositorios usan SQLite + fallback mock
+- **Solicitud a medio llenar**: borrador sobrevive cierre de app, se restaura al reabrir
+- **Ruta interrumpida**: estado "visitado" persiste aunque la app se cierre
 
-### Criterio de aceptación
-- La cartera diaria se puede ver sin conexión a internet
-- Los borradores de solicitud sobreviven al cierre de la app
-- Al volver a internet, los datos locales se actualizan (sin cola todavía)
+### Criterio de aceptación cumplido
+- ✅ Cartera diaria visible sin conexión a internet (badge "Offline")
+- ✅ Borradores de solicitud sobreviven al cierre de la app (restaura en 4 campos)
+- ✅ Estado "visitado" de ruta persiste en SQLite (restaura al cargar ruta)
+- ✅ LEFT JOIN en EstadoSolicitudesRepository (no excluye solicitudes sin cliente)
+- ✅ `connectivity_plus` evita llamada Supabase si no hay red
+- ✅ `flutter analyze`: 0 issues
 
-### Qué NO tocar todavía
-- Cola de sincronización bidireccional, sync_outbox, conflictos
+### Documentación
+- `docs/FASE2D_SQLITE_OFFLINE.md`
 
 ---
 
@@ -301,7 +312,7 @@
 | **2B** | GPS real | **Crítica** | Completada | Fase 2A |
 | **2B.1** | Mejora Ruta sin API Key | Alta | Completada | Fase 2B |
 | **2C** | Conexión Supabase real (Dashboard, Estado Solicitudes, Reportes) | Alta | Completada | Fase 2A |
-| **2D** | SQLite offline | Alta | 2-3 semanas | Fase 2A |
+| **2D** | SQLite offline | Alta | Completada | Fase 2A |
 | **2E** | Sync outbox/log | Media | 1 semana | Fase 2D |
 | **3** | App Clientes + features avanzadas | Media | 4-6 semanas | Fase 2B, 2C, 2D |
 | **4** | Core Mobile FastAPI | Media | 6-8 semanas | Fase 3 |

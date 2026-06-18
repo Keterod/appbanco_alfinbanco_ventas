@@ -24,7 +24,7 @@ class EstadoSolicitudesRepository {
       final rows = await SupabaseHelper.withTimeout(
         supabase
             .from('solicitudes_credito')
-            .select('*, clientes!inner(nombres, apellidos, numero_documento)')
+            .select('*, clientes!left(nombres, apellidos, numero_documento)')
             .eq('asesor_id', asesor.id)
             .order('created_at', ascending: false),
         operation: 'solicitudes_credito lista',
@@ -56,7 +56,7 @@ class EstadoSolicitudesRepository {
       final row = await SupabaseHelper.withTimeout(
         supabase
             .from('solicitudes_credito')
-            .select('*, clientes!inner(nombres, apellidos, numero_documento)')
+            .select('*, clientes!left(nombres, apellidos, numero_documento)')
             .eq('id', id)
             .eq('asesor_id', asesor.id)
             .maybeSingle(),
@@ -80,7 +80,7 @@ class EstadoSolicitudesRepository {
       final row = await SupabaseHelper.withTimeout(
         supabase
             .from('solicitudes_credito')
-            .select('*, clientes!inner(nombres, apellidos, numero_documento)')
+            .select('*, clientes!left(nombres, apellidos, numero_documento)')
             .eq('numero_expediente', expediente)
             .maybeSingle(),
         operation: 'solicitudes_credito por expediente',

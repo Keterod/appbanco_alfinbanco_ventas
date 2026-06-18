@@ -23,11 +23,15 @@ class _CarteraDiariaScreenState extends State<CarteraDiariaScreen> {
   void initState() {
     super.initState();
     _viewModel = CarteraViewModel();
+    _viewModel.addListener(_onVmChanged);
     _viewModel.loadCartera();
   }
 
+  void _onVmChanged() => setState(() {});
+
   @override
   void dispose() {
+    _viewModel.removeListener(_onVmChanged);
     _viewModel.dispose();
     super.dispose();
   }
@@ -140,6 +144,8 @@ class _HeaderSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
+        _DataSourceBanner(source: viewModel.dataSource),
+        const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
@@ -147,6 +153,11 @@ class _HeaderSection extends StatelessWidget {
                 label: 'Visitas del día',
                 value: '${viewModel.totalVisits}',
                 accent: AppColors.secondary,
+                badge: viewModel.dataSource == 'offline'
+                    ? 'Offline'
+                    : viewModel.dataSource == 'demo'
+                        ? 'Demo'
+                        : null,
               ),
             ),
             const SizedBox(width: 10),
@@ -177,11 +188,13 @@ class _StatTile extends StatelessWidget {
     required this.label,
     required this.value,
     required this.accent,
+    this.badge,
   });
 
   final String label;
   final String value;
   final Color accent;
+  final String? badge;
 
   @override
   Widget build(BuildContext context) {
@@ -191,12 +204,39 @@ class _StatTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: accent,
-                    fontWeight: FontWeight.w800,
+            Row(
+              children: [
+                Text(
+                  value,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: accent,
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+                if (badge != null) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: badge == 'Offline'
+                          ? Colors.orange.shade100
+                          : AppColors.lightGraySecondary,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      badge!,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: badge == 'Offline'
+                            ? Colors.orange.shade900
+                            : AppColors.darkText,
+                      ),
+                    ),
                   ),
+                ],
+              ],
             ),
             const SizedBox(height: 4),
             Text(
@@ -207,6 +247,61 @@ class _StatTile extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _DataSourceBanner extends StatelessWidget {
+  const _DataSourceBanner({required this.source});
+
+  final String source;
+
+  @override
+  Widget build(BuildContext context) {
+    Color bgColor;
+    Color textColor;
+    IconData icon;
+    String label;
+
+    switch (source) {
+      case 'live':
+        bgColor = const Color(0xFFE8F5E9);
+        textColor = const Color(0xFF2E7D32);
+        icon = Icons.cloud_done_outlined;
+        label = 'Sincronizado con Supabase';
+      case 'offline':
+        bgColor = const Color(0xFFFFF3E0);
+        textColor = const Color(0xFFE65100);
+        icon = Icons.wifi_off_outlined;
+        label = 'Modo offline · datos guardados';
+      default:
+        bgColor = const Color(0xFFF5F5F5);
+        textColor = const Color(0xFF616161);
+        icon = Icons.bug_report_outlined;
+        label = 'Modo demo';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: textColor),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: textColor,
+            ),
+          ),
+        ],
       ),
     );
   }

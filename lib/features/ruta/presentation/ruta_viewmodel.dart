@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../core/location/location_service.dart';
+import '../../../core/storage/visitas_local_datasource.dart';
 import '../domain/route_visit_model.dart';
 
 /// ViewModel de planificación de ruta diaria (HU-V09).
@@ -87,6 +88,19 @@ class RutaViewModel extends ChangeNotifier {
     await Future<void>.delayed(const Duration(milliseconds: 450));
 
     _visitas = _buildInitialVisits();
+
+    // Restaurar estados visitados desde SQLite
+    final savedEstados = await VisitasLocalDataSource.instance.loadAllEstados();
+    if (savedEstados.isNotEmpty) {
+      _visitas = _visitas.map((v) {
+        final saved = savedEstados[v.clientId];
+        if (saved != null && saved == 'visitado') {
+          return v.copyWith(estadoVisita: RouteVisitStatus.visitado);
+        }
+        return v;
+      }).toList();
+    }
+
     _visitasIniciales = List.from(_visitas);
     _modoOptimizado = false;
     _isLoading = false;
@@ -126,7 +140,7 @@ class RutaViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void markAsVisited(String clientId) {
+  Future<void> markAsVisited(String clientId) async {
     final index = _visitas.indexWhere((v) => v.clientId == clientId);
     if (index < 0) {
       _errorMessage = 'Visita no encontrada.';
@@ -137,6 +151,13 @@ class RutaViewModel extends ChangeNotifier {
     _visitas[index] = _visitas[index].copyWith(
       estadoVisita: RouteVisitStatus.visitado,
     );
+
+    await VisitasLocalDataSource.instance.saveVisitaEstado(
+      visitaId: _visitas[index].id,
+      carteraId: clientId,
+      resultado: 'visitado',
+    );
+
     _successMessage =
         '${_visitas[index].clienteNombre} marcado como visitado.';
     notifyListeners();

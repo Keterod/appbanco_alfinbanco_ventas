@@ -3,7 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 
 import '../../../core/location/location_service.dart';
+import '../../../core/storage/borrador_local_datasource.dart';
 import '../../../core/supabase/supabase_helper.dart';
+import '../../auth/data/asesor_repository.dart';
 import '../data/solicitud_repository.dart';
 import '../domain/credit_request_model.dart';
 
@@ -138,7 +140,13 @@ class SolicitudCreditoViewModel extends ChangeNotifier {
     await Future<void>.delayed(const Duration(milliseconds: 300));
 
     _clientId = clientId;
-    if (clientId != null) {
+
+    // Intentar restaurar borrador previo
+    final draft =
+        await BorradorLocalDataSource.instance.loadBorrador(clienteId: clientId);
+    if (draft != null) {
+      _restoreFromDraft(draft);
+    } else if (clientId != null) {
       final seed = _clientSeed[clientId];
       if (seed != null) {
         _nombres = seed.nombres;
@@ -433,6 +441,7 @@ class SolicitudCreditoViewModel extends ChangeNotifier {
     if (_pasoActual < 3) {
       _pasoActual++;
       if (_pasoActual == 2) calculateInstallment();
+      saveDraft();
       notifyListeners();
     }
     return true;
@@ -441,6 +450,7 @@ class SolicitudCreditoViewModel extends ChangeNotifier {
   void previousStep() {
     if (_pasoActual > 0) {
       _pasoActual--;
+      saveDraft();
       notifyListeners();
     }
   }
@@ -469,6 +479,7 @@ class SolicitudCreditoViewModel extends ChangeNotifier {
         _estadoSolicitud = EstadoSolicitud.enviadoDemo;
         _successMessage =
             'Solicitud registrada en Supabase. Expediente $_numeroExpediente.';
+        await _deleteCurrentDraft();
         _isLoading = false;
         notifyListeners();
         return true;
@@ -488,6 +499,7 @@ class SolicitudCreditoViewModel extends ChangeNotifier {
     _successMessage =
         'Solicitud registrada localmente. Expediente $_numeroExpediente (${_estadoSolicitud.label}).';
 
+    await _deleteCurrentDraft();
     _isLoading = false;
     notifyListeners();
     return true;
@@ -525,6 +537,118 @@ class SolicitudCreditoViewModel extends ChangeNotifier {
       estadoSolicitud: _estadoSolicitud,
       numeroExpediente: _numeroExpediente,
     );
+  }
+
+  /// Guarda el estado actual del formulario como borrador en SQLite.
+  Future<void> saveDraft() {
+    final asesor = AsesorRepository.instance.current;
+    if (asesor == null) return Future<void>.value();
+    return BorradorLocalDataSource.instance.saveBorrador(
+      asesorId: asesor.id,
+      clienteId: _clientId,
+      clienteNombre: '$nombres $apellidos'.trim(),
+      pasoActual: _pasoActual,
+      formData: _buildDraftData(),
+      montoSolicitado: _montoSolicitado,
+    );
+  }
+
+  Map<String, dynamic> _buildDraftData() => {
+        'nombres': _nombres,
+        'apellidos': _apellidos,
+        'documento': _documento,
+        'fechaNacimiento': _fechaNacimiento,
+        'estadoCivil': _estadoCivil?.name,
+        'gradoInstruccion': _gradoInstruccion?.name,
+        'telefono': _telefono,
+        'correo': _correo,
+        'tipoNegocio': _tipoNegocio?.name,
+        'nombreNegocio': _nombreNegocio,
+        'direccionNegocio': _direccionNegocio,
+        'antiguedadNegocioMeses': _antiguedadNegocioMeses,
+        'ingresosMensuales': _ingresosMensuales,
+        'gastosMensuales': _gastosMensuales,
+        'patrimonioEstimado': _patrimonioEstimado,
+        'destinoCredito': _destinoCredito,
+        'actividadEconomica': _actividadEconomica,
+        'montoSolicitado': _montoSolicitado,
+        'plazoMeses': _plazoMeses,
+        'moneda': _moneda.name,
+        'tipoCuota': _tipoCuota?.name,
+        'garantia': _garantia?.name,
+        'aceptaDeclaracion': _aceptaDeclaracion,
+        'firmaSimulada': _firmaSimulada,
+        'estadoSolicitud': _estadoSolicitud.name,
+        'numeroExpediente': _numeroExpediente,
+      };
+
+  void _restoreFromDraft(Map<String, dynamic> draft) {
+    final data = draft['datos_json'] as Map<String, dynamic>;
+    _pasoActual = draft['paso_actual'] as int? ?? 0;
+    _nombres = data['nombres'] as String? ?? '';
+    _apellidos = data['apellidos'] as String? ?? '';
+    _documento = data['documento'] as String? ?? '';
+    _fechaNacimiento = data['fechaNacimiento'] as String? ?? '';
+    _estadoCivil = (data['estadoCivil'] as String?) != null
+        ? EstadoCivil.values.firstWhere(
+            (e) => e.name == data['estadoCivil'],
+            orElse: () => EstadoCivil.soltero,
+          )
+        : null;
+    _gradoInstruccion = (data['gradoInstruccion'] as String?) != null
+        ? GradoInstruccion.values.firstWhere(
+            (e) => e.name == data['gradoInstruccion'],
+            orElse: () => GradoInstruccion.secundaria,
+          )
+        : null;
+    _telefono = data['telefono'] as String? ?? '';
+    _correo = data['correo'] as String? ?? '';
+    _tipoNegocio = (data['tipoNegocio'] as String?) != null
+        ? TipoNegocio.values.firstWhere(
+            (e) => e.name == data['tipoNegocio'],
+            orElse: () => TipoNegocio.otro,
+          )
+        : null;
+    _nombreNegocio = data['nombreNegocio'] as String? ?? '';
+    _direccionNegocio = data['direccionNegocio'] as String? ?? '';
+    _antiguedadNegocioMeses = data['antiguedadNegocioMeses'] as int? ?? 0;
+    _ingresosMensuales = _toDouble(data['ingresosMensuales']) ?? 0;
+    _gastosMensuales = _toDouble(data['gastosMensuales']) ?? 0;
+    _patrimonioEstimado = _toDouble(data['patrimonioEstimado']) ?? 0;
+    _destinoCredito = data['destinoCredito'] as String? ?? '';
+    _actividadEconomica = data['actividadEconomica'] as String? ?? '';
+    _montoSolicitado = _toDouble(data['montoSolicitado']) ?? 5000;
+    _plazoMeses = data['plazoMeses'] as int? ?? 12;
+    _moneda = (data['moneda'] as String?) != null
+        ? Moneda.values.firstWhere(
+            (e) => e.name == data['moneda'],
+            orElse: () => Moneda.pen,
+          )
+        : Moneda.pen;
+    _tipoCuota = (data['tipoCuota'] as String?) != null
+        ? TipoCuota.values.firstWhere(
+            (e) => e.name == data['tipoCuota'],
+            orElse: () => TipoCuota.fija,
+          )
+        : null;
+    _garantia = (data['garantia'] as String?) != null
+        ? Garantia.values.firstWhere(
+            (e) => e.name == data['garantia'],
+            orElse: () => Garantia.personal,
+          )
+        : null;
+    _aceptaDeclaracion = data['aceptaDeclaracion'] as bool? ?? false;
+    _firmaSimulada = data['firmaSimulada'] as bool? ?? false;
+    _numeroExpediente = data['numeroExpediente'] as String?;
+  }
+
+  Future<void> _deleteCurrentDraft() =>
+      BorradorLocalDataSource.instance.deleteBorrador(clienteId: _clientId);
+
+  static double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString());
   }
 }
 

@@ -1,6 +1,6 @@
 # Pendientes técnicos — App Fuerza de Ventas
 
-> Actualizado durante Fase 2B — GPS Real.
+> Actualizado durante Fase 2D — SQLite offline básico.
 > Clasificación: ✅ Ya implementado | 🔴 Crítico | 🟡 Importante | ⏸️ Después | 🟢 Opcional
 
 ---
@@ -22,7 +22,7 @@
 | 11 | Ruta visitas (interfaz) | `ruta_screen.dart`, `ruta_viewmodel.dart` | Mapa simulado, optimización, marcar visitado |
 | 12 | Cobranza (interfaz) | `cobranza_screen.dart`, `cobranza_accion_screen.dart` | Listado, filtros, formulario con validación |
 | 13 | Reportes (interfaz) | `reportes_screen.dart`, `reportes_viewmodel.dart` | 3 periodos, 8 indicadores, progreso |
-| 14 | SQLite esquema (4 tablas) | `local_db.dart` | Tablas creadas, pendiente conectar |
+| 14 | SQLite esquema (4 tablas + datasources) | `local_db.dart`, `cartera_local_datasource.dart`, `borrador_local_datasource.dart`, `visitas_local_datasource.dart` | ✅ Conectado en Fase 2D |
 | 15 | Repositorios Supabase (cartera, ficha, buró, solicitud, cobranza) | `*_repository.dart` | Estructura lista para datos reales |
 | 16 | Branding unificado | `app_strings.dart`, `app_colors.dart` | "Banco Alfin · App Fuerza de Ventas" |
 | 17 | **GPS real** — Ubicación real del oficial en cobranza, solicitud y ruta con fallback controlado | `location_service.dart`, `cobranza_accion_viewmodel.dart`, `solicitud_credito_viewmodel.dart`, `ruta_viewmodel.dart` | `geolocator` + `url_launcher` + permisos |
@@ -31,6 +31,13 @@
 | 20 | **Estado Solicitudes desde Supabase** — Consulta `solicitudes_credito` + join `clientes` | `estado_solicitudes_repository.dart`, `estado_solicitudes_viewmodel.dart` | Fallback `RequestStatusMockData` |
 | 21 | **Detalle Solicitud desde Supabase** — Timeline generado del estado real | `estado_solicitudes_repository.dart`, `estado_solicitud_detalle_viewmodel.dart` | Fallback mock |
 | 22 | **Reportes desde Supabase** — Consulta `solicitudes_credito`, `cartera_diaria`, `acciones_cobranza` | `reportes_repository.dart`, `reportes_viewmodel.dart` | Fallback mock hardcoded |
+| 23 | **SQLite cartera_cache** — `CarteraLocalDataSource` con save/load/clear/has | `cartera_local_datasource.dart` | Cache de cartera diaria offline |
+| 24 | **Cartera repository con fallback SQLite** — Supabase → cache SQLite → mock | `cartera_repository.dart` | `lastSource: 'live'/'offline'/'demo'` |
+| 25 | **Indicador offline/demo en Cartera** — Badge "Offline" o "Demo" en UI | `cartera_diaria_screen.dart` | `_StatTile.badge` |
+| 26 | **Borradores SQLite** — `BorradorLocalDataSource` persiste formulario en cada paso | `borrador_local_datasource.dart`, `solicitud_credito_viewmodel.dart` | Restaura al cargar, elimina al enviar |
+| 27 | **Ruta persistente en SQLite** — `VisitasLocalDataSource` guarda estado visitado | `visitas_local_datasource.dart`, `ruta_viewmodel.dart` | Restaura estados al cargar ruta |
+| 28 | **LEFT JOIN en EstadoSolicitudes** — `clientes!inner` → `clientes!left` | `estado_solicitudes_repository.dart` | Permite solicitudes sin cliente vinculado |
+| 29 | **Conectividad en repositorios** — `connectivity_plus` para evitar llamada Supabase offline | `cartera_repository.dart` | Salta a SQLite si no hay red |
 
 ---
 
@@ -50,7 +57,7 @@
 
 | # | Pendiente | Archivos | Impacto |
 |---|-----------|----------|---------|
-| I1 | **SQLite offline** — 4 tablas creadas pero nunca escritas ni leídas | `local_db.dart`, todos los ViewModels | Sin offline no hay operatividad sin internet |
+| I1 | **SQLite offline** — cartera, borradores, visitas | `cartera_local_datasource.dart`, `borrador_local_datasource.dart`, `visitas_local_datasource.dart` | ✅ **Fase 2D** — Cartera cacheada, borradores persistidos, visitas guardadas |
 | I3 | **Cola de sincronización** — No existe `sync_outbox`/`sync_log` | — | Sin cola no se puede sincronizar offline→online |
 | I4 | **Ficha cliente sin datos para IDs de mora** — `cli-006` a `cli-010` sin mock | `ficha_cliente_viewmodel.dart` | Navegación incompleta desde cobranza |
 | I5 | **Roles** — No existe campo `rol` en `AsesorModel`. Sin control de acceso | `asesor_model.dart` | Todos los usuarios ven lo mismo |
