@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/supabase/supabase_helper.dart';
+import '../../auth/data/asesor_repository.dart';
 import '../data/estado_solicitudes_repository.dart';
-import '../domain/request_status_mock_data.dart';
 import '../domain/request_status_model.dart';
 
 /// ViewModel del tablero de estado de solicitudes (HU-V07).
@@ -37,35 +38,39 @@ class EstadoSolicitudesViewModel extends ChangeNotifier {
           r.estado == RequestStatus.desembolsada)
       .fold(0, (sum, r) => sum + (r.montoAprobado ?? r.montoSolicitado));
 
+  /// ID del asesor logueado actualmente.
+  String? get asesorId => AsesorRepository.instance.current?.id;
+
+  /// Reclama una solicitud (la asigna al asesor actual).
+  Future<void> reclamarSolicitud(RequestStatusModel solicitud) async {
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _repo.reclamarSolicitud(solicitud.id);
+      await loadRequests(highlightedSolicitudId: _highlightReference);
+    } catch (error, stackTrace) {
+      debugPrint('DEBUG VENTAS ASESOR: error al reclamar: $error');
+      SupabaseHelper.logError(error, stackTrace);
+      _errorMessage = SupabaseHelper.friendlyError(error);
+      notifyListeners();
+    }
+  }
+
   Future<void> loadRequests({String? highlightedSolicitudId}) async {
     _isLoading = true;
     _errorMessage = null;
     _highlightReference = highlightedSolicitudId;
     notifyListeners();
 
-    try {
-      final real = await _repo.loadSolicitudes();
-      final anyReal =
-          real.any((r) => r.id.startsWith('req-') == false);
-      if (real.isNotEmpty && anyReal) {
-        _requests = real;
-        _usandoDatosReales = true;
-      } else {
-        _requests = RequestStatusMockData.all();
-        _usandoDatosReales = false;
-      }
-    } catch (_) {
-      _requests = RequestStatusMockData.all();
-      _usandoDatosReales = false;
-    }
+    _requests = await _repo.loadSolicitudes();
+    _usandoDatosReales = _requests.isNotEmpty;
 
     if (_highlightReference != null) {
-      final match = _usandoDatosReales
-          ? _requests.cast<RequestStatusModel?>().firstWhere(
-                (r) => r!.matchesReference(_highlightReference),
-                orElse: () => null,
-              )
-          : RequestStatusMockData.findByReference(_highlightReference);
+      final match = _requests.cast<RequestStatusModel?>().firstWhere(
+            (r) => r!.matchesReference(_highlightReference),
+            orElse: () => null,
+          );
       if (match != null) {
         _selectedStatus = match.estado;
       }

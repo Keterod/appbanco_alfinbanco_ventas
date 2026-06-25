@@ -35,7 +35,7 @@ class RequestTimelineItem {
 
 /// Solicitud con estado y seguimiento (HU-V07).
 class RequestStatusModel {
-  const RequestStatusModel({
+  RequestStatusModel({
     required this.id,
     required this.numeroExpediente,
     required this.clienteNombre,
@@ -50,7 +50,8 @@ class RequestStatusModel {
     this.condicionAdicional,
     required this.timeline,
     this.solicitudLocalId,
-  });
+    Map<String, dynamic>? rawData,
+  }) : rawData = rawData ?? const {};
 
   final String id;
   final String numeroExpediente;
@@ -68,6 +69,12 @@ class RequestStatusModel {
 
   /// Referencia local del flujo (ej. ALF-LOCAL-0001).
   final String? solicitudLocalId;
+
+  /// Datos crudos de Supabase para operaciones posteriores.
+  final Map<String, dynamic> rawData;
+
+  /// ID del asesor asignado (null si está libre).
+  String? get asesorId => rawData['asesor_id']?.toString();
 
   bool matchesReference(String? reference) {
     if (reference == null || reference.isEmpty) return false;

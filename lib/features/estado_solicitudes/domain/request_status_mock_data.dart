@@ -146,6 +146,7 @@ abstract final class RequestStatusMockData {
       diasDesdeEnvio: 3,
       analistaAsignado: 'Lic. Patricia Mora',
       estado: RequestStatus.enEvaluacion,
+      rawData: {},
       timeline: _baseTimeline(
         current: RequestStatus.enEvaluacion,
         base: DateTime(2026, 6, 1, 10, 30),
@@ -161,6 +162,7 @@ abstract final class RequestStatusMockData {
       diasDesdeEnvio: 7,
       analistaAsignado: 'Lic. Jorge Salinas',
       estado: RequestStatus.enviada,
+      rawData: {},
       timeline: _baseTimeline(
         current: RequestStatus.enviada,
         base: DateTime(2026, 5, 28, 9, 0),
@@ -176,6 +178,7 @@ abstract final class RequestStatusMockData {
       diasDesdeEnvio: 10,
       analistaAsignado: 'Lic. Patricia Mora',
       estado: RequestStatus.enComite,
+      rawData: {},
       timeline: _baseTimeline(
         current: RequestStatus.enComite,
         base: DateTime(2026, 5, 25, 14, 15),
@@ -192,6 +195,7 @@ abstract final class RequestStatusMockData {
       diasDesdeEnvio: 15,
       analistaAsignado: 'Lic. Andrea Vela',
       estado: RequestStatus.aprobada,
+      rawData: {},
       timeline: _baseTimeline(
         current: RequestStatus.aprobada,
         base: DateTime(2026, 5, 20, 11, 0),
@@ -210,6 +214,7 @@ abstract final class RequestStatusMockData {
       estado: RequestStatus.condicionada,
       condicionAdicional:
           'Presentar garantía prendaria actualizada en 5 días hábiles.',
+      rawData: {},
       timeline: _baseTimeline(
         current: RequestStatus.condicionada,
         base: DateTime(2026, 5, 18, 16, 45),
@@ -228,6 +233,7 @@ abstract final class RequestStatusMockData {
       estado: RequestStatus.rechazada,
       motivoRechazo:
           'Capacidad de pago insuficiente según flujo de caja declarado.',
+      rawData: {},
       timeline: _baseTimeline(
         current: RequestStatus.rechazada,
         base: DateTime(2026, 5, 15, 8, 20),
@@ -245,6 +251,7 @@ abstract final class RequestStatusMockData {
       diasDesdeEnvio: 25,
       analistaAsignado: 'Lic. Patricia Mora',
       estado: RequestStatus.desembolsada,
+      rawData: {},
       timeline: _baseTimeline(
         current: RequestStatus.desembolsada,
         base: DateTime(2026, 5, 10, 13, 0),
@@ -262,6 +269,7 @@ abstract final class RequestStatusMockData {
       diasDesdeEnvio: 27,
       analistaAsignado: 'Lic. Jorge Salinas',
       estado: RequestStatus.desembolsada,
+      rawData: {},
       timeline: _baseTimeline(
         current: RequestStatus.desembolsada,
         base: DateTime(2026, 5, 8, 10, 0),

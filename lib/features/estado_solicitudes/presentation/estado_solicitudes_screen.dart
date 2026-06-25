@@ -40,12 +40,15 @@ class _EstadoSolicitudesScreenState extends State<EstadoSolicitudesScreen> {
     super.dispose();
   }
 
-  void _openDetalle(RequestStatusModel request) {
-    Navigator.pushNamed(
+  Future<void> _openDetalle(RequestStatusModel request) async {
+    final result = await Navigator.pushNamed(
       context,
       AppRoutes.estadoSolicitudDetalle,
       arguments: request.id,
     );
+    if (result == true && mounted) {
+      _vm.loadRequests(highlightedSolicitudId: widget.highlightReference);
+    }
   }
 
   @override
@@ -69,7 +72,7 @@ class _EstadoSolicitudesScreenState extends State<EstadoSolicitudesScreen> {
                       child: _vm.getFilteredRequests().isEmpty
                           ? Center(
                               child: Text(
-                                'No hay solicitudes en ${_vm.selectedStatus.label}',
+                                'No hay solicitudes reales en Supabase',
                                 style: Theme.of(context).textTheme.bodyLarge,
                               ),
                             )
@@ -83,8 +86,14 @@ class _EstadoSolicitudesScreenState extends State<EstadoSolicitudesScreen> {
                                   child: _RequestCard(
                                     request: item,
                                     highlighted: _vm.isHighlighted(item),
+                                    asesorId: _vm.asesorId,
                                     currency: _currency,
                                     onTap: () => _openDetalle(item),
+                                    onReclamar: item.asesorId == null
+                                        ? () async {
+                                            await _vm.reclamarSolicitud(item);
+                                          }
+                                        : null,
                                   ),
                                 );
                               },
@@ -240,18 +249,24 @@ class _RequestCard extends StatelessWidget {
   const _RequestCard({
     required this.request,
     required this.highlighted,
+    required this.asesorId,
     required this.currency,
     required this.onTap,
+    this.onReclamar,
   });
 
   final RequestStatusModel request;
   final bool highlighted;
+  final String? asesorId;
   final NumberFormat currency;
   final VoidCallback onTap;
+  final VoidCallback? onReclamar;
 
   @override
   Widget build(BuildContext context) {
     final statusColor = RequestStatusUi.color(request.estado);
+    final estaLibre = request.asesorId == null;
+    final esMio = !estaLibre && request.asesorId == asesorId;
 
     return Card(
       shape: RoundedRectangleBorder(
@@ -288,6 +303,21 @@ class _RequestCard extends StatelessWidget {
                           ),
                     ),
                   ),
+                  if (esMio)
+                    Chip(
+                      label: const Text('Mi expediente', style: TextStyle(fontSize: 11)),
+                      backgroundColor: AppColors.semaforoNormal.withValues(alpha: 0.15),
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                    ),
+                  if (!estaLibre && !esMio)
+                    Chip(
+                      label: const Text('Asignada', style: TextStyle(fontSize: 11)),
+                      backgroundColor: AppColors.semaforoCpp.withValues(alpha: 0.15),
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                    ),
+                  const SizedBox(width: 4),
                   Icon(Icons.chevron_right, color: AppColors.secondary),
                 ],
               ),
@@ -316,9 +346,26 @@ class _RequestCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 6),
-              Text(
-                'Analista: ${request.analistaAsignado}',
-                style: Theme.of(context).textTheme.bodySmall,
+              Row(
+                children: [
+                  Text(
+                    'Analista: ${request.analistaAsignado}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const Spacer(),
+                  if (estaLibre && onReclamar != null)
+                    SizedBox(
+                      height: 28,
+                      child: ElevatedButton.icon(
+                        onPressed: onReclamar,
+                        icon: const Icon(Icons.person_add_alt_1, size: 16),
+                        label: const Text('Reclamar', style: TextStyle(fontSize: 12)),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                        ),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(height: 10),
               Chip(

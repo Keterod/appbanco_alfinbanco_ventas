@@ -95,6 +95,364 @@ class _EstadoSolicitudDetalleScreenState
     );
   }
 
+  Future<void> _aprobar() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirmar aprobación'),
+        content: Text(
+          '¿Está seguro de aprobar la solicitud '
+          '${_vm.request?.numeroExpediente ?? ''} por '
+          '${_currency.format(_vm.request?.montoAprobado ?? _vm.request?.montoSolicitado ?? 0)}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Aprobar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    final ok = await _vm.aprobar();
+    if (!mounted) return;
+
+    _mostrarResultado(ok, 'aprobada');
+    if (ok && mounted) Navigator.pop(context, true);
+  }
+
+  Future<void> _condicionar() async {
+    final montoSolicitado = _vm.request?.montoSolicitado ?? 0;
+    final montoRecomendado = _vm.montoRecomendado;
+    final montoController = TextEditingController(
+      text: montoRecomendado > 0 ? montoRecomendado.toStringAsFixed(0) : '',
+    );
+    final condController = TextEditingController();
+    String? validationError;
+
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Condicionar solicitud'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _DetailRow('Monto solicitado', _currency.format(montoSolicitado)),
+                _DetailRow(
+                  'Monto recomendado',
+                  _currency.format(montoRecomendado),
+                ),
+                const SizedBox(height: 12),
+                if (validationError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      validationError!,
+                      style: TextStyle(
+                        color: AppColors.gestionRecuperacionMora,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                TextField(
+                  controller: montoController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Monto aprobado',
+                    prefixText: 'S/ ',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: condController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Condición',
+                    hintText: 'Describa la condición...',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final montoText = montoController.text.trim();
+                final monto = double.tryParse(montoText);
+                final condicion = condController.text.trim();
+
+                if (monto == null || monto <= 0) {
+                  setDialogState(() => validationError = 'El monto aprobado debe ser mayor a 0.');
+                  return;
+                }
+                if (monto >= montoSolicitado) {
+                  setDialogState(
+                    () => validationError = 'Para condicionar, el monto aprobado debe ser menor al solicitado.',
+                  );
+                  return;
+                }
+                if (condicion.isEmpty) {
+                  setDialogState(() => validationError = 'La observación no puede estar vacía.');
+                  return;
+                }
+
+                Navigator.pop(ctx, {'monto': monto, 'condicion': condicion});
+              },
+              child: const Text('Confirmar condición'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (result == null || !mounted) return;
+
+    final ok = await _vm.condicionar(
+      montoAprobado: result['monto'] as double,
+      condicion: result['condicion'] as String,
+    );
+    if (!mounted) return;
+
+    _mostrarResultado(ok, 'condicionada');
+    if (ok && mounted) Navigator.pop(context, true);
+  }
+
+  Future<void> _rechazar() async {
+    final controller = TextEditingController();
+    final motivo = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Rechazar solicitud'),
+        content: TextField(
+          controller: controller,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            hintText: 'Describa el motivo del rechazo...',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, controller.text),
+            child: const Text('Rechazar'),
+          ),
+        ],
+      ),
+    );
+
+    if (motivo == null || motivo.trim().isEmpty || !mounted) return;
+
+    final ok = await _vm.rechazar(motivo.trim());
+    if (!mounted) return;
+
+    _mostrarResultado(ok, 'rechazada');
+  }
+
+  Future<void> _desembolsar() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirmar desembolso'),
+        content: Text(
+          '¿Está seguro de desembolsar la solicitud '
+          '${_vm.request?.numeroExpediente ?? ''} por '
+          '${_currency.format(_vm.request?.montoAprobado ?? _vm.request?.montoSolicitado ?? 0)}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Desembolsar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    final ok = await _vm.desembolsar();
+    if (!mounted) return;
+
+    _mostrarResultado(ok, 'desembolsada');
+    if (ok && mounted) Navigator.pop(context, true);
+  }
+
+  Future<void> _reclamarSolicitud() async {
+    await _vm.reclamarSolicitud();
+    if (!mounted) return;
+    if (_vm.errorMessage != null) {
+      _mostrarResultado(false, 'reclamar');
+    } else {
+      _mostrarResultado(true, 'reclamada');
+    }
+  }
+
+  void _mostrarResultado(bool ok, String accion) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? 'Solicitud $accion correctamente.'
+              : _vm.errorMessage ?? 'Error al $accion.',
+        ),
+        backgroundColor: ok ? AppColors.semaforoNormal : AppColors.gestionRecuperacionMora,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  bool get _asignadoAOtroAsesor =>
+      _vm.request?.asesorId != null && _vm.request?.asesorId != _vm.asesorId;
+
+  Widget _buildBottomBar() {
+    if (_vm.request == null) return const SizedBox.shrink();
+
+    // Si está asignado a otro asesor, solo mostrar barra de acciones simples
+    if (_asignadoAOtroAsesor) {
+      return _ActionBar(
+        onCompartir: _compartirEstado,
+        onNota: _agregarNota,
+      );
+    }
+
+    final estado = _vm.request!.estado;
+
+    if (estado == RequestStatus.enviada) {
+      final cargando = _vm.isProcesando;
+      return Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 6,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: cargando ? null : _aprobar,
+                  icon: cargando
+                      ? const SizedBox(
+                          width: 18, height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white),
+                        )
+                      : const Icon(Icons.check_circle_outline, size: 20),
+                  label: const Text('Aprobar', style: TextStyle(fontSize: 13)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.semaforoNormal,
+                    foregroundColor: AppColors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: cargando ? null : _condicionar,
+                  icon: const Icon(Icons.warning_amber_outlined, size: 20),
+                  label: const Text('Condicionar', style: TextStyle(fontSize: 13)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.semaforoCpp,
+                    side: const BorderSide(color: AppColors.semaforoCpp),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: cargando ? null : _rechazar,
+                  icon: const Icon(Icons.cancel_outlined, size: 20),
+                  label: const Text('Rechazar', style: TextStyle(fontSize: 13)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.gestionRecuperacionMora,
+                    side: const BorderSide(color: AppColors.gestionRecuperacionMora),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (estado == RequestStatus.aprobada ||
+        estado == RequestStatus.condicionada) {
+      return Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 6,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: ElevatedButton.icon(
+            onPressed: _vm.isDesembolsando ? null : _desembolsar,
+            icon: _vm.isDesembolsando
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.white,
+                    ),
+                  )
+                : const Icon(Icons.payments_outlined),
+            label: Text(
+              _vm.isDesembolsando
+                  ? 'Desembolsando…'
+                  : 'Desembolsar',
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.semaforoNormal,
+              foregroundColor: AppColors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return _ActionBar(
+      onCompartir: _compartirEstado,
+      onNota: _agregarNota,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -105,12 +463,7 @@ class _EstadoSolicitudDetalleScreenState
             title: const Text('Detalle de solicitud'),
           ),
           body: _buildBody(),
-          bottomNavigationBar: _vm.request != null
-              ? _ActionBar(
-                  onCompartir: _compartirEstado,
-                  onNota: _agregarNota,
-                )
-              : null,
+          bottomNavigationBar: _buildBottomBar(),
         );
       },
     );
@@ -200,6 +553,41 @@ class _EstadoSolicitudDetalleScreenState
             ),
           ),
         ),
+        if (r.asesorId == null) ...[
+          const SizedBox(height: 12),
+          _AlertBox(
+            title: 'Sin asesor asignado',
+            text: 'Esta solicitud aún no tiene asesor asignado. Reclámala para gestionarla.',
+            color: AppColors.semaforoCpp,
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _vm.isProcesando ? null : _reclamarSolicitud,
+              icon: _vm.isProcesando
+                  ? const SizedBox(
+                      width: 18, height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.person_add_alt_1),
+              label: const Text('Reclamar solicitud'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.secondary,
+                foregroundColor: AppColors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+          ),
+        ],
+        if (r.asesorId != null && r.asesorId != _vm.asesorId) ...[
+          const SizedBox(height: 12),
+          _AlertBox(
+            title: 'Asignada a otro asesor',
+            text: 'Esta solicitud ya fue asignada a otro asesor.',
+            color: AppColors.gestionRecuperacionMora,
+          ),
+        ],
         const SizedBox(height: 16),
         Text(
           'Línea de tiempo',
