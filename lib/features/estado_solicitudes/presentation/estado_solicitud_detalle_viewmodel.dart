@@ -13,6 +13,7 @@ class EstadoSolicitudDetalleViewModel extends ChangeNotifier {
   bool _isLoading = false;
   bool _isProcesando = false;
   bool _isDesembolsando = false;
+  bool _isEnviando = false;
   String? _errorMessage;
   String? _successMessage;
   RequestStatusModel? _request;
@@ -21,6 +22,7 @@ class EstadoSolicitudDetalleViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isProcesando => _isProcesando;
   bool get isDesembolsando => _isDesembolsando;
+  bool get isEnviando => _isEnviando;
   String? get errorMessage => _errorMessage;
   String? get successMessage => _successMessage;
   RequestStatusModel? get request => _request;
@@ -48,6 +50,32 @@ class EstadoSolicitudDetalleViewModel extends ChangeNotifier {
 
     _isProcesando = false;
     notifyListeners();
+  }
+
+  Future<bool> enviarAEvaluacion(String observacion) async {
+    if (_request == null) return false;
+
+    _isEnviando = true;
+    _errorMessage = null;
+    _successMessage = null;
+    notifyListeners();
+
+    try {
+      await _repo.enviarAEvaluacion(
+        solicitud: _request!.rawData,
+        observacion: observacion,
+      );
+      _successMessage = 'Expediente enviado a evaluación correctamente.';
+      _isEnviando = false;
+      notifyListeners();
+      return true;
+    } catch (error, stackTrace) {
+      SupabaseHelper.logError(error, stackTrace);
+      _errorMessage = SupabaseHelper.friendlyError(error);
+      _isEnviando = false;
+      notifyListeners();
+      return false;
+    }
   }
 
   Future<void> loadRequest(

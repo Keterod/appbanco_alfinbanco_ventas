@@ -676,6 +676,35 @@ class EstadoSolicitudesRepository {
     debugPrint('DEBUG VENTAS ASESOR: solicitud reclamada OK');
   }
 
+  Future<void> enviarAEvaluacion({
+    required Map<String, dynamic> solicitud,
+    required String observacion,
+  }) async {
+    final solicitudId = solicitud['id']?.toString();
+    if (solicitudId == null || solicitudId.isEmpty) {
+      throw StateError('La solicitud no tiene id.');
+    }
+
+    final asesorId = await _obtenerAsesorActualId();
+    final asesorActual = solicitud['asesor_id']?.toString();
+    if (asesorActual != null && asesorActual.isNotEmpty && asesorActual != asesorId) {
+      throw Exception('Esta solicitud está asignada a otro asesor.');
+    }
+
+    debugPrint('DEBUG VENTAS ASESOR: enviando a evaluacion solicitud=$solicitudId');
+
+    await SupabaseHelper.withTimeout(
+      supabase.from('solicitudes_credito').update({
+        'observacion_evaluador': observacion,
+        if (asesorActual == null || asesorActual.isEmpty) 'asesor_id': asesorId,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', solicitudId),
+      operation: 'solicitudes_credito enviar a evaluacion',
+    );
+
+    debugPrint('DEBUG VENTAS ASESOR: solicitud enviada a evaluacion OK');
+  }
+
   double? _toDouble(dynamic value) {
     if (value == null) return null;
     if (value is num) return value.toDouble();

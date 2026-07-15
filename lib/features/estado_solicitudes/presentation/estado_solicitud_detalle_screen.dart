@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -308,6 +310,45 @@ class _EstadoSolicitudDetalleScreenState
     }
   }
 
+  Future<void> _enviarAEvaluacion() async {
+    final controller = TextEditingController(
+      text: 'Expediente validado por asesor y listo para evaluación.',
+    );
+    final observacion = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Enviar a evaluación'),
+        content: TextField(
+          controller: controller,
+          maxLines: 4,
+          decoration: const InputDecoration(
+            labelText: 'Observación del asesor',
+            hintText: 'Describa el estado del expediente...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, controller.text),
+            child: const Text('Enviar'),
+          ),
+        ],
+      ),
+    );
+
+    if (observacion == null || observacion.trim().isEmpty || !mounted) return;
+
+    final ok = await _vm.enviarAEvaluacion(observacion.trim());
+    if (!mounted) return;
+
+    _mostrarResultado(ok, 'enviada a evaluación');
+    if (ok && mounted) Navigator.pop(context, true);
+  }
+
   void _mostrarResultado(bool ok, String accion) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -329,7 +370,6 @@ class _EstadoSolicitudDetalleScreenState
   Widget _buildBottomBar() {
     if (_vm.request == null) return const SizedBox.shrink();
 
-    // Si está asignado a otro asesor, solo mostrar barra de acciones simples
     if (_asignadoAOtroAsesor) {
       return _ActionBar(
         onCompartir: _compartirEstado,
@@ -337,76 +377,12 @@ class _EstadoSolicitudDetalleScreenState
       );
     }
 
-    final estado = _vm.request!.estado;
+    final esDueno = _vm.request!.asesorId == _vm.asesorId;
+    final estadolibre = _vm.request!.asesorId == null;
+    final puedeEnviar = esDueno || estadolibre;
 
-    if (estado == RequestStatus.enviada) {
-      final cargando = _vm.isProcesando;
-      return Container(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 6,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: cargando ? null : _aprobar,
-                  icon: cargando
-                      ? const SizedBox(
-                          width: 18, height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white),
-                        )
-                      : const Icon(Icons.check_circle_outline, size: 20),
-                  label: const Text('Aprobar', style: TextStyle(fontSize: 13)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.semaforoNormal,
-                    foregroundColor: AppColors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: cargando ? null : _condicionar,
-                  icon: const Icon(Icons.warning_amber_outlined, size: 20),
-                  label: const Text('Condicionar', style: TextStyle(fontSize: 13)),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.semaforoCpp,
-                    side: const BorderSide(color: AppColors.semaforoCpp),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: cargando ? null : _rechazar,
-                  icon: const Icon(Icons.cancel_outlined, size: 20),
-                  label: const Text('Rechazar', style: TextStyle(fontSize: 13)),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.gestionRecuperacionMora,
-                    side: const BorderSide(color: AppColors.gestionRecuperacionMora),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (estado == RequestStatus.aprobada ||
-        estado == RequestStatus.condicionada) {
+    if (puedeEnviar && _vm.request!.estado == RequestStatus.enviada) {
+      final cargando = _vm.isEnviando;
       return Container(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
         decoration: BoxDecoration(
@@ -421,24 +397,18 @@ class _EstadoSolicitudDetalleScreenState
         ),
         child: SafeArea(
           child: ElevatedButton.icon(
-            onPressed: _vm.isDesembolsando ? null : _desembolsar,
-            icon: _vm.isDesembolsando
+            onPressed: cargando ? null : _enviarAEvaluacion,
+            icon: cargando
                 ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.white,
-                    ),
+                    width: 20, height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white),
                   )
-                : const Icon(Icons.payments_outlined),
+                : const Icon(Icons.send_outlined),
             label: Text(
-              _vm.isDesembolsando
-                  ? 'Desembolsando…'
-                  : 'Desembolsar',
+              cargando ? 'Enviando…' : 'Marcar listo para evaluación',
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.semaforoNormal,
+              backgroundColor: AppColors.secondary,
               foregroundColor: AppColors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
@@ -514,6 +484,14 @@ class _EstadoSolicitudDetalleScreenState
                     _currency.format(r.montoAprobado),
                   ),
                 _DetailRow('Analista', r.analistaAsignado),
+                const SizedBox(height: 12),
+                _PreEvalCard(rawData: r.rawData, currency: _currency),
+                const SizedBox(height: 12),
+                _AlertBox(
+                  title: 'Comité web',
+                  text: 'Este expediente será evaluado por el comité en el Front Core Web.',
+                  color: AppColors.purpleSupport,
+                ),
                 const SizedBox(height: 8),
                 Chip(
                   label: Text(r.estado.label),
@@ -676,6 +654,88 @@ class _AlertBox extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(text),
+        ],
+      ),
+    );
+  }
+}
+
+class _PreEvalCard extends StatelessWidget {
+  const _PreEvalCard({required this.rawData, required this.currency});
+
+  final Map<String, dynamic> rawData;
+  final NumberFormat currency;
+
+  String? _str(String key) => rawData[key]?.toString();
+  double? _num(String key) {
+    final v = rawData[key];
+    if (v == null) return null;
+    if (v is num) return v.toDouble();
+    return double.tryParse(v.toString());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final score = _num('score_pre_evaluacion');
+    final elegibilidad = _str('elegibilidad');
+    final riesgo = _str('riesgo_asignado');
+    final ratio = _num('ratio_capacidad_pago');
+    final motivo = _str('motivo_pre_evaluacion');
+
+    if (score == null && elegibilidad == null) return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.lightBackground,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Preevaluación',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.purpleSupport,
+                ),
+          ),
+          const SizedBox(height: 8),
+          if (score != null) _row('Score', score.toStringAsFixed(0)),
+          if (elegibilidad != null) _row('Elegibilidad', elegibilidad),
+          if (riesgo != null) _row('Riesgo', riesgo),
+          if (ratio != null) _row('Ratio capacidad', ratio.toStringAsFixed(4)),
+          if (motivo != null) _row('Motivo', motivo),
+        ],
+      ),
+    );
+  }
+
+  Widget _row(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ),
         ],
       ),
     );
